@@ -14,6 +14,8 @@ let goals = JSON.parse(localStorage.getItem('sarvam_goals') || '[]');
 let assets = JSON.parse(localStorage.getItem('sarvam_assets') || '[]');
 let liabilities = JSON.parse(localStorage.getItem('sarvam_liabilities') || '[]');
 let expenses = JSON.parse(localStorage.getItem('sarvam_expenses') || '[]');
+let latestSpendingAudit = localStorage.getItem('sarvam_audit_analysis') || '';
+let latestStrategyRoadmap = localStorage.getItem('sarvam_latest_strategy') || '';
 
 // --- API Endpoint Helper ---
 function getApiUrl(path) {
@@ -28,11 +30,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadSavedProfile();
+  renderAssetsList();
   recalculateAll();
   renderGoalsList();
   renderExpensesList();
   renderExpensePieChart();
   runSim();
+
+  // Attach reactive listeners to all cashflow inputs for instant auto-calculation
+  ['inp-age', 'inp-income', 'inp-mandatory-expense', 'inp-discretionary-expense', 'inp-debt-emi', 'inp-liquid-savings', 'inp-dependents', 'inp-stability', 'inp-risk'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => recalculateAll());
+      el.addEventListener('change', () => recalculateAll());
+    }
+  });
 });
 
 // --- Tab Switching ---
@@ -62,7 +74,7 @@ function switchTab(tabId) {
   }
 }
 
-// --- Profile Data Management ---
+// --- Profile & Context Data Management ---
 function getProfileData() {
   const ageVal = document.getElementById('inp-age')?.value;
   const incomeVal = document.getElementById('inp-income')?.value;
@@ -85,6 +97,174 @@ function getProfileData() {
     assets: assets,
     liabilities: liabilities
   };
+}
+
+function buildFullFinancialContext() {
+  const ageVal = document.getElementById('inp-age')?.value;
+  const incomeVal = document.getElementById('inp-income')?.value;
+  const mandatoryVal = document.getElementById('inp-mandatory-expense')?.value;
+  const discretionaryVal = document.getElementById('inp-discretionary-expense')?.value;
+  const debtVal = document.getElementById('inp-debt-emi')?.value;
+  const savingsVal = document.getElementById('inp-liquid-savings')?.value;
+  const hasDependents = document.getElementById('inp-dependents')?.value === 'true';
+  const stability = document.getElementById('inp-stability')?.value || 'stable';
+  const risk = document.getElementById('inp-risk')?.value || 'moderate';
+
+  const income = parseFloat(incomeVal) || 0;
+  const mandatory = parseFloat(mandatoryVal) || 0;
+  const discretionary = parseFloat(discretionaryVal) || 0;
+  const debt = parseFloat(debtVal) || 0;
+  const liquidSavings = parseFloat(savingsVal) || 0;
+
+  const totalOutflows = mandatory + discretionary + debt;
+  const surplus = income - totalOutflows;
+  const savingsRate = income > 0 ? (surplus / income) * 100 : 0;
+  const dti = income > 0 ? (debt / income) * 100 : 0;
+  const runwayMonths = mandatory > 0 ? (liquidSavings / mandatory) : 0;
+
+  // Assets & Liabilities Calculations
+  const totalAssets = assets.reduce((sum, a) => sum + (parseFloat(a.value) || 0), 0);
+  const totalLiabilities = liabilities.reduce((sum, l) => sum + (parseFloat(l.amount) || 0), 0);
+  const netWorth = totalAssets - totalLiabilities;
+  const debtToAssetPct = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
+
+  const assetCats = {};
+  assets.forEach(a => {
+    assetCats[a.category] = (assetCats[a.category] || 0) + (parseFloat(a.value) || 0);
+  });
+  const assetCatSummary = Object.keys(assetCats).map(cat => `${cat}: ₹${formatCurrency(assetCats[cat])}`).join(', ') || 'No assets categorized';
+
+  const assetDetails = assets.map(a => `- Asset: ${a.title} (Category: ${a.category}, Value: ₹${formatCurrency(a.value)})`).join('\n');
+  const liabilityDetails = liabilities.map(l => `- Debt: ${l.title} (Amount: ₹${formatCurrency(l.amount)})`).join('\n');
+
+  // Goals Feasibility & Compound Savings Calculations
+  let totalGoalMonthlyNeeded = 0;
+  const goalsSummary = goals.map(g => {
+    const target = parseFloat(g.target_amount) || 0;
+    const current = parseFloat(g.current_amount) || 0;
+    const years = parseFloat(g.target_years) || 1;
+    const roi = parseFloat(g.expected_roi_pct) || 6.0;
+    const shortfall = Math.max(0, target - current);
+    const months = years * 12;
+    const r = (roi / 100) / 12;
+    let reqMonthly = 0;
+    if (shortfall > 0) {
+      if (r > 0) {
+        reqMonthly = (shortfall * r) / (((1 + r) ** months - 1) * (1 + r));
+      } else {
+        reqMonthly = shortfall / months;
+      }
+    }
+    totalGoalMonthlyNeeded += reqMonthly;
+    const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+    return `- Goal "${g.title}": Target ₹${formatCurrency(target)} in ${years} yrs | Current Saved: ₹${formatCurrency(current)} (${pct}%) | Required Monthly SIP: ₹${formatCurrency(reqMonthly)}`;
+  }).join('\n');
+
+  // Website Goal Feasibility Analysis
+  let goalFeasibility = "No goals added yet.";
+  if (goals.length > 0) {
+    if (income === 0) {
+      goalFeasibility = `Total monthly investment needed across all goals is ₹${formatCurrency(totalGoalMonthlyNeeded)}/mo. (Income/surplus not yet entered to evaluate affordability).`;
+    } else if (surplus <= 0) {
+      goalFeasibility = `Deficit Alert: Goals require ₹${formatCurrency(totalGoalMonthlyNeeded)}/mo, but current monthly cash flow is in deficit by ₹${formatCurrency(Math.abs(surplus))}/mo. Website recommendation: focus first on stabilizing cash flow and reducing non-essential expenses before committing to goals.`;
+    } else if (surplus < totalGoalMonthlyNeeded) {
+      const gap = totalGoalMonthlyNeeded - surplus;
+      goalFeasibility = `Funding Shortfall Warning: Goals require ₹${formatCurrency(totalGoalMonthlyNeeded)}/mo, but available monthly surplus is only ₹${formatCurrency(surplus)}/mo (funding shortfall of ₹${formatCurrency(gap)}/mo). Website recommendation: prioritize high-urgency safety goals first or extend target timelines on secondary goals.`;
+    } else {
+      const excess = surplus - totalGoalMonthlyNeeded;
+      goalFeasibility = `Fully Fundable: Available surplus of ₹${formatCurrency(surplus)}/mo comfortably covers the required ₹${formatCurrency(totalGoalMonthlyNeeded)}/mo across all goals, with ₹${formatCurrency(excess)}/mo unallocated cash flow remaining.`;
+    }
+  }
+
+  // Website Emergency Runway Assessment
+  let runwayDiagnostic = "Not established (liquid savings or mandatory living costs not entered).";
+  if (mandatory > 0) {
+    if (runwayMonths < 3) {
+      runwayDiagnostic = `Critical (Only ${runwayMonths.toFixed(1)} months): Emergency reserves of ₹${formatCurrency(liquidSavings)} fall short of the recommended 6-month buffer (₹${formatCurrency(mandatory * 6)}). Website recommendation: prioritize building liquid reserves before committing to illiquid investments.`;
+    } else if (runwayMonths < 6) {
+      runwayDiagnostic = `Moderate (${runwayMonths.toFixed(1)} months): Emergency reserve covers living costs for ${runwayMonths.toFixed(1)} months, below the optimal 6-month target of ₹${formatCurrency(mandatory * 6)}.`;
+    } else {
+      runwayDiagnostic = `Healthy (${runwayMonths.toFixed(1)} months): Ample liquid cushion covering ₹${formatCurrency(liquidSavings)} against ₹${formatCurrency(mandatory)}/mo mandatory costs.`;
+    }
+  }
+
+  // Website Debt Stress Assessment
+  let debtDiagnostic = "Low / None entered.";
+  if (income > 0) {
+    if (dti > 40) {
+      debtDiagnostic = `High Debt Stress Warning (${dti.toFixed(1)}% DTI): Monthly EMIs of ₹${formatCurrency(debt)} exceed the healthy 40% income threshold. Website recommendation: accelerate high-interest debt paydown before aggressive investing.`;
+    } else if (dti > 20) {
+      debtDiagnostic = `Moderate (${dti.toFixed(1)}% DTI): Manageable debt level consuming ₹${formatCurrency(debt)}/mo.`;
+    } else if (debt > 0) {
+      debtDiagnostic = `Low (${dti.toFixed(1)}% DTI): Well within safe bounds.`;
+    }
+  }
+
+  // User Tracked Expenses Breakdown
+  let expenseLogSummary = "No expenses logged in tracker.";
+  if (expenses.length > 0) {
+    const totalSpent = expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    const expCats = {};
+    expenses.forEach(e => {
+      expCats[e.category] = (expCats[e.category] || 0) + (parseFloat(e.amount) || 0);
+    });
+    const expCatText = Object.keys(expCats).map(c => `${c}: ₹${formatCurrency(expCats[c])}`).join(', ');
+    expenseLogSummary = `Total logged spending: ₹${formatCurrency(totalSpent)} across ${expenses.length} entries. Category breakdown: ${expCatText}.`;
+  }
+
+  // Compounding Simulator Settings & Output
+  const simMonthly = parseFloat(document.getElementById('sim-monthly')?.value) || 0;
+  const simRate = parseFloat(document.getElementById('sim-rate')?.value) || 0;
+  const simYears = parseInt(document.getElementById('sim-years')?.value) || 0;
+  const simResult = document.getElementById('sim-result-value')?.textContent || '₹0';
+  let simSummary = `SIP ₹${formatCurrency(simMonthly)}/mo at ${simRate}% for ${simYears} years -> Projected Corpus: ${simResult}`;
+
+  // Unified, comprehensive financial context string
+  return `
+[USER-ENTERED FINANCIAL INFORMATION & WEBSITE-GENERATED DIAGNOSTICS]
+
+1. USER PROFILE:
+- Age: ${ageVal ? ageVal : 'Not specified by user'}
+- Dependents: ${hasDependents ? 'Yes' : 'No'}
+- Income Stability: ${stability}
+- Risk Appetite: ${risk}
+
+2. USER CASH FLOW (USER-ENTERED):
+- Monthly In-Hand Net Income: ₹${formatCurrency(income)} ${income === 0 ? '(Not yet entered by user)' : ''}
+- Mandatory Living Expenses: ₹${formatCurrency(mandatory)}
+- Discretionary Lifestyle Expenses: ₹${formatCurrency(discretionary)}
+- Monthly Debt / Loan EMIs: ₹${formatCurrency(debt)}
+- Total Monthly Outflows: ₹${formatCurrency(totalOutflows)}
+- Liquid Emergency Savings: ₹${formatCurrency(liquidSavings)}
+
+3. WEBSITE-GENERATED CASH FLOW DIAGNOSTICS & ALERTS:
+- Net Monthly Surplus: ₹${formatCurrency(surplus)} ${income > 0 ? `(Savings Rate: ${savingsRate.toFixed(1)}%)` : ''}
+- Emergency Runway: ${runwayDiagnostic}
+- Debt-to-Income (DTI): ${debtDiagnostic}
+
+4. USER BALANCE SHEET & WEBSITE-GENERATED NET WORTH:
+- Total Assets (${assets.length} items): ₹${formatCurrency(totalAssets)}
+  Breakdown by Category: ${assetCatSummary}
+${assetDetails || '  (No individual asset items entered)'}
+- Total Liabilities (${liabilities.length} items): ₹${formatCurrency(totalLiabilities)}
+${liabilityDetails || '  (No individual debt items entered)'}
+- Net Worth: ₹${formatCurrency(netWorth)} (Debt-to-Asset Ratio: ${debtToAssetPct.toFixed(1)}%)
+
+5. USER FINANCIAL GOALS & WEBSITE FEASIBILITY ANALYSIS:
+${goalsSummary || 'No custom goals added yet by user.'}
+- Total Monthly Investment Needed Across All Goals: ₹${formatCurrency(totalGoalMonthlyNeeded)}/mo
+- Website Feasibility Assessment: ${goalFeasibility}
+
+6. EXPENSE TRACKER & RECENT AUDIT FINDINGS:
+- Logged Tracker: ${expenseLogSummary}
+- Website Expense Doctor / Spending Leak Audit: ${latestSpendingAudit ? latestSpendingAudit : 'Not run yet.'}
+
+7. COMPOUNDING SIMULATOR SETTINGS:
+- ${simSummary}
+
+8. WEBSITE-GENERATED STRATEGY ROADMAP:
+- ${latestStrategyRoadmap ? latestStrategyRoadmap : 'Not formulated yet by user.'}
+`.trim();
 }
 
 function saveProfile(data) {
@@ -155,6 +335,7 @@ function renderEmptyMetrics() {
 
   renderCashflowSplitChart({ mandatory_expenses: 0, discretionary_expenses: 0, debt_obligations: 0, net_monthly_surplus: 0 });
   renderAssetsSplitChart({ total_assets: totalAssets });
+  renderAssetsList();
 }
 
 function calculateLocallyFallback(profile) {
@@ -216,6 +397,7 @@ function updateUIWithCalculations(data) {
 
   renderCashflowSplitChart(cf);
   renderAssetsSplitChart(nw);
+  renderAssetsList();
 }
 
 // --- Chart Renderers ---
@@ -499,6 +681,68 @@ function closeAssetModal() {
   document.getElementById('modal-add-asset').classList.add('hidden');
 }
 
+function renderAssetsList() {
+  const container = document.getElementById('assets-list-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+  if (assets.length === 0 && liabilities.length === 0) {
+    container.innerHTML = `<div class="text-center text-slate-500 py-2 text-[11px]">No individual assets or debts logged yet. Click "+ Add Asset/Debt" above.</div>`;
+    return;
+  }
+
+  assets.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between p-1.5 rounded-lg bg-slate-900/60 border border-slate-800/80';
+    row.innerHTML = `
+      <div class="truncate pr-2">
+        <span class="text-emerald-400 font-semibold">[Asset]</span>
+        <span class="text-slate-200 ml-1 font-medium">${escapeHtml(a.title)}</span>
+        <span class="text-[10px] text-slate-500 ml-1">(${escapeHtml(a.category || 'Asset')})</span>
+      </div>
+      <div class="flex items-center space-x-2 flex-shrink-0">
+        <span class="font-bold text-emerald-400 text-xs">₹${formatCurrency(a.value)}</span>
+        <button onclick="deleteAsset('${a.id}')" class="text-slate-500 hover:text-red-400 transition" title="Delete">
+          <i class="ph ph-trash"></i>
+        </button>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  liabilities.forEach(l => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between p-1.5 rounded-lg bg-slate-900/60 border border-slate-800/80';
+    row.innerHTML = `
+      <div class="truncate pr-2">
+        <span class="text-rose-400 font-semibold">[Debt]</span>
+        <span class="text-slate-200 ml-1 font-medium">${escapeHtml(l.title)}</span>
+      </div>
+      <div class="flex items-center space-x-2 flex-shrink-0">
+        <span class="font-bold text-rose-400 text-xs">₹${formatCurrency(l.amount)}</span>
+        <button onclick="deleteLiability('${l.id}')" class="text-slate-500 hover:text-red-400 transition" title="Delete">
+          <i class="ph ph-trash"></i>
+        </button>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function deleteAsset(id) {
+  assets = assets.filter(a => a.id !== id);
+  localStorage.setItem('sarvam_assets', JSON.stringify(assets));
+  renderAssetsList();
+  recalculateAll();
+}
+
+function deleteLiability(id) {
+  liabilities = liabilities.filter(l => l.id !== id);
+  localStorage.setItem('sarvam_liabilities', JSON.stringify(liabilities));
+  renderAssetsList();
+  recalculateAll();
+}
+
 function handleAddAsset() {
   const type = document.getElementById('modal-asset-type').value;
   const title = document.getElementById('modal-asset-title').value.trim();
@@ -516,6 +760,7 @@ function handleAddAsset() {
   }
 
   closeAssetModal();
+  renderAssetsList();
   recalculateAll();
 }
 
@@ -610,7 +855,10 @@ async function auditExpensesWithAI() {
     }
 
     const data = await res.json();
-    resultBox.textContent = data.audit_analysis || "No recommendations generated.";
+    const auditText = data.audit_analysis || "No recommendations generated.";
+    resultBox.textContent = auditText;
+    latestSpendingAudit = auditText;
+    localStorage.setItem('sarvam_audit_analysis', latestSpendingAudit);
   } catch (err) {
     resultBox.textContent = `Error: ${err.message}`;
   } finally {
@@ -657,6 +905,8 @@ async function triggerAiStrategy() {
     if (data.strategy) {
       appendChatMessage('assistant', data.strategy);
       chatHistory.push({ role: 'assistant', content: data.strategy });
+      latestStrategyRoadmap = data.strategy;
+      localStorage.setItem('sarvam_latest_strategy', latestStrategyRoadmap);
     }
   } catch (err) {
     loadingDiv.remove();
@@ -723,7 +973,8 @@ async function handleSendMessage(isVoiceInput = false, detectedLang = 'en-IN') {
   appendChatMessage('user', text);
   chatHistory.push({ role: 'user', content: text });
 
-  const profile = getProfileData();
+  // Gather complete user data and website-generated suggestions across all tabs
+  const fullContext = buildFullFinancialContext();
 
   const loadingDiv = document.createElement('div');
   loadingDiv.id = 'chat-loading-indicator';
@@ -738,7 +989,7 @@ async function handleSendMessage(isVoiceInput = false, detectedLang = 'en-IN') {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: chatHistory,
-        context: JSON.stringify(profile),
+        context: fullContext,
         enable_voice: isVoiceInput, // Only request TTS if voice input was used
         voice_language: detectedLang
       })

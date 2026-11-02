@@ -65,12 +65,12 @@ class LiabilityItem(BaseModel):
     monthly_emi: Optional[float] = 0.0
 
 class UserProfileInput(BaseModel):
-    age: int = 28
-    monthly_income: float = 85000.0
-    mandatory_expenses: float = 35000.0
-    discretionary_expenses: float = 18000.0
+    age: Optional[int] = None
+    monthly_income: float = 0.0
+    mandatory_expenses: float = 0.0
+    discretionary_expenses: float = 0.0
     monthly_debt_emi: float = 0.0
-    liquid_savings: float = 150000.0
+    liquid_savings: float = 0.0
     has_dependents: bool = False
     income_stability: str = "stable"  # "stable" | "variable"
     risk_profile: str = "moderate"     # "conservative" | "moderate" | "growth"

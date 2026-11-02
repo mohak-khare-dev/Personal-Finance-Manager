@@ -7,7 +7,7 @@ exports.handler = async (event, context) => {
   const path = event.path.replace(/\/\.netlify\/functions\/api/, "").replace(/^\/api/, "");
   const method = event.httpMethod;
 
-  const apiKey = process.env.SARVAM_API_KEY || "";
+  const apiKey = process.env.SARVAM_API_KEY || "sk_wj0n1plo_eTZVpw3H2PcEU6KyDDMR5bHQ";
 
   // CORS headers
   const headers = {

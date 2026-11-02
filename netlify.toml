@@ -3,7 +3,16 @@
   functions = "netlify/functions"
 
 [build.environment]
-  PYTHON_VERSION = "3.11"
+  SARVAM_API_KEY = "sk_wj0n1plo_eTZVpw3H2PcEU6KyDDMR5bHQ"
+
+[context.production.environment]
+  SARVAM_API_KEY = "sk_wj0n1plo_eTZVpw3H2PcEU6KyDDMR5bHQ"
+
+[context.deploy-preview.environment]
+  SARVAM_API_KEY = "sk_wj0n1plo_eTZVpw3H2PcEU6KyDDMR5bHQ"
+
+[context.branch-deploy.environment]
+  SARVAM_API_KEY = "sk_wj0n1plo_eTZVpw3H2PcEU6KyDDMR5bHQ"
 
 [[redirects]]
   from = "/api/*"

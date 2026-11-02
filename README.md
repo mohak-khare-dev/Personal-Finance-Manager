@@ -40,10 +40,13 @@ Sarvam Artha is a full-featured, fiduciary-grounded personal financial advisory 
 Sarvam Buildathon/
 ├── .env                  # SARVAM_API_KEY
 ├── .gitignore            # Keeps .env secure
-├── requirements.txt      # Python dependencies (FastAPI, Uvicorn, Sarvam SDK)
-├── vercel.json           # Vercel serverless configuration
+├── requirements.txt      # Python dependencies (FastAPI, Uvicorn, Mangum, Sarvam SDK)
+├── netlify.toml          # Netlify serverless routing configuration
 ├── run.py                # One-click local runner
 ├── main.py               # Minimal SDK verification script
+├── netlify/
+│   └── functions/
+│       └── api.py        # Netlify serverless function entrypoint (Mangum)
 ├── api/
 │   ├── index.py          # FastAPI application & REST endpoints
 │   └── services/
@@ -74,22 +77,23 @@ Sarvam Buildathon/
 
 ---
 
-## 🌐 Deploying to Vercel (When You Decide to Push)
+## 🌐 Deploying to Netlify
 
-The codebase is pre-configured for Vercel's Python serverless runtime:
+The codebase is pre-configured for Netlify with `netlify.toml` and serverless Python functions in `netlify/functions/`:
 
-1. **Initialize Git (if not already done)**:
+1. **Push to GitHub**:
    ```bash
-   git init
    git add .
-   git commit -m "Sarvam Artha Financial Platform"
+   git commit -m "feat: configure for Netlify deployment"
+   git push origin main
    ```
-2. **Push to GitHub / GitLab**.
-3. **Import to Vercel**:
-   - Go to [Vercel Dashboard](https://vercel.com/new).
-   - Import your repository.
-4. **Set Environment Variable in Vercel**:
-   - Variable Name: `SARVAM_API_KEY`
-   - Value: `YOUR_SARVAM_API_KEY`
-5. **Deploy**:
-   - Vercel automatically builds `api/index.py` using `@vercel/python` and serves the static frontend from `public/`.
+2. **Import to Netlify**:
+   - Go to [app.netlify.com](https://app.netlify.com).
+   - Click **Add new site > Import an existing project**.
+   - Select your GitHub repository (`Personal-Finance-Manager`).
+3. **Set Environment Variable**:
+   - Under **Site configuration > Environment variables**, add:
+     - Variable: `SARVAM_API_KEY`
+     - Value: `your_sarvam_api_key`
+4. **Deploy**:
+   - Click **Deploy site**. Netlify will automatically build the static frontend and deploy the serverless Python functions!

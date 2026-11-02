@@ -712,13 +712,13 @@ function updateVoiceLanguage() {
   console.log("Voice language switched to:", lang);
 }
 
-// --- Vercel Modal ---
-function openVercelModal() {
-  document.getElementById('modal-vercel').classList.remove('hidden');
+// --- Netlify Modal ---
+function openNetlifyModal() {
+  document.getElementById('modal-netlify').classList.remove('hidden');
 }
 
-function closeVercelModal() {
-  document.getElementById('modal-vercel').classList.add('hidden');
+function closeNetlifyModal() {
+  document.getElementById('modal-netlify').classList.add('hidden');
 }
 
 // --- Helpers ---

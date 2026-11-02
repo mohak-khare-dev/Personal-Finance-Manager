@@ -112,15 +112,15 @@
         </button>
       </nav>
 
-      <!-- Status & Vercel Pill -->
+      <!-- Status & Netlify Pill -->
       <div class="flex items-center space-x-3">
         <div class="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span>Sarvam 105B + Saaras</span>
         </div>
-        <button onclick="openVercelModal()" class="hidden lg:flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs border border-slate-700 transition">
-          <i class="ph ph-triangle font-bold"></i>
-          <span>Vercel Ready</span>
+        <button onclick="openNetlifyModal()" class="hidden lg:flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs border border-slate-700 transition">
+          <i class="ph ph-cloud font-bold text-sky-400"></i>
+          <span>Netlify Ready</span>
         </button>
       </div>
     </div>
@@ -164,7 +164,7 @@
             <i class="ph ph-microphone text-lg"></i>
             <span>Talk to Sarvam AI</span>
           </button>
-          <button onclick="openVercelModal()" class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700 transition flex items-center space-x-2">
+          <button onclick="openNetlifyModal()" class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700 transition flex items-center space-x-2">
             <i class="ph ph-rocket-launch text-lg text-gold-400"></i>
             <span>Deployment Guide</span>
           </button>
@@ -939,40 +939,39 @@
 
   </main>
 
-  <!-- Vercel Deployment Modal -->
-  <div id="modal-vercel" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+  <!-- Netlify Deployment Modal -->
+  <div id="modal-netlify" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass-card rounded-2xl max-w-xl w-full p-6 sm:p-8 border border-slate-700 shadow-2xl space-y-4">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <div class="flex items-center space-x-2">
-          <i class="ph ph-triangle text-xl text-white"></i>
-          <h3 class="text-base font-bold text-white">Deploying to Vercel (When You Are Ready)</h3>
+          <i class="ph ph-cloud text-xl text-sky-400"></i>
+          <h3 class="text-base font-bold text-white">Deploying to Netlify</h3>
         </div>
-        <button onclick="closeVercelModal()" class="text-slate-400 hover:text-white text-lg">
+        <button onclick="closeNetlifyModal()" class="text-slate-400 hover:text-white text-lg">
           <i class="ph ph-x"></i>
         </button>
       </div>
 
       <div class="text-xs text-slate-300 space-y-3">
-        <p>This project is already pre-configured for seamless Vercel deployment with <code class="bg-slate-800 text-brand-400 px-1 py-0.5 rounded">vercel.json</code> and <code class="bg-slate-800 text-brand-400 px-1 py-0.5 rounded">api/index.py</code>.</p>
+        <p>This project is configured for Netlify deployment with <code class="bg-slate-800 text-brand-400 px-1 py-0.5 rounded">netlify.toml</code> and serverless functions in <code class="bg-slate-800 text-brand-400 px-1 py-0.5 rounded">netlify/functions/api.py</code>.</p>
         
         <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-          <span class="font-bold text-white block">Step-by-Step Vercel Deployment:</span>
+          <span class="font-bold text-white block">Step-by-Step Netlify Deployment:</span>
           <ol class="list-decimal list-inside space-y-1 text-slate-300">
-            <li>Initialize Git: <code class="text-emerald-400">git init && git add . && git commit -m "Sarvam Artha"</code></li>
-            <li>Push repository to GitHub or GitLab.</li>
-            <li>Import project on <a href="https://vercel.com/new" target="_blank" class="text-brand-400 underline">Vercel.com</a>.</li>
-            <li>Add Environment Variable: <code class="text-gold-400">SARVAM_API_KEY</code> with your key.</li>
-            <li>Click <strong>Deploy</strong>. Vercel automatically deploys the Python serverless API and public website!</li>
+            <li>Push repository to GitHub.</li>
+            <li>Go to <a href="https://app.netlify.com" target="_blank" class="text-sky-400 underline">app.netlify.com</a> and click <strong>Add new site &gt; Import an existing project</strong>.</li>
+            <li>Select GitHub and choose <code class="text-emerald-400">Personal-Finance-Manager</code>.</li>
+            <li>Netlify auto-detects <code class="text-brand-400">netlify.toml</code> for build settings.</li>
+            <li>Go to <strong>Site configuration &gt; Environment variables</strong> and add:
+              <br><code class="text-gold-400 font-mono">SARVAM_API_KEY = your_key_here</code>
+            </li>
+            <li>Click <strong>Deploy site</strong>. Netlify will deploy your static frontend and serverless Python API!</li>
           </ol>
         </div>
-
-        <p class="text-[11px] text-slate-400">
-          *Note: Per your instructions, the final push is reserved until you say so. You can test and use the application locally at any time!
-        </p>
       </div>
 
       <div class="pt-2 flex justify-end">
-        <button onclick="closeVercelModal()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition">
+        <button onclick="closeNetlifyModal()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition">
           Got It
         </button>
       </div>

@@ -86,7 +86,7 @@
             <span class="text-xl font-extrabold tracking-tight text-white">Sarvam Artha</span>
             <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30">सर्वम् अर्थ</span>
           </div>
-          <p class="text-xs text-slate-400 hidden sm:block">Intelligent Personal Finance Manager & AI Strategist</p>
+          <p class="text-xs text-slate-400 hidden sm:block">Personal Finance Manager & Financial Advisor</p>
         </div>
       </div>
 
@@ -102,20 +102,12 @@
           <i class="ph ph-receipt mr-1"></i> Expense Tracker
         </button>
         <button onclick="switchTab('tab-advisor')" id="btn-tab-advisor" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white">
-          <i class="ph ph-brain mr-1"></i> AI Strategist & Voice
+          <i class="ph ph-brain mr-1"></i> AI Advisor & Voice
         </button>
       </nav>
 
-      <!-- Status & Netlify Pill -->
-      <div class="flex items-center space-x-3">
-        <div class="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Sarvam AI (105B + Saaras)</span>
-        </div>
-        <button onclick="openNetlifyModal()" class="hidden lg:flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs border border-slate-700 transition">
-          <i class="ph ph-cloud font-bold text-sky-400"></i>
-          <span>Netlify Ready</span>
-        </button>
+      <div class="flex items-center space-x-2">
+        <span class="text-xs text-slate-400 hidden sm:inline">Financial Intelligence</span>
       </div>
     </div>
   </header>
@@ -132,7 +124,7 @@
       <i class="ph ph-receipt text-base"></i> Tracker
     </button>
     <button onclick="switchTab('tab-advisor')" class="text-xs flex flex-col items-center text-slate-400">
-      <i class="ph ph-brain text-base"></i> AI Advice
+      <i class="ph ph-brain text-base"></i> Advisor
     </button>
   </div>
 
@@ -144,23 +136,23 @@
       <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <span class="text-xs uppercase tracking-wider text-brand-400 font-semibold bg-brand-500/10 px-3 py-1 rounded-full border border-brand-500/20">
-            Open-Ended Financial Intelligence
+            Personal Financial Well-Being
           </span>
           <h1 class="text-2xl sm:text-3xl font-extrabold text-white mt-2">
             Personal Finance Built Around <span class="gradient-text">Your Life & Goals</span>
           </h1>
           <p class="text-slate-300 text-sm sm:text-base max-w-2xl mt-1">
-            No rigid templates or pre-packaged assumptions. Track cash flow, define your personal goals, and get reasoning-based financial strategies crafted dynamically by Sarvam AI.
+            Track your income and living expenses, define your personal goals, and get reasoned guidance tailored directly to your financial profile.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
           <button onclick="triggerAiStrategy()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white text-sm font-semibold shadow-lg shadow-brand-500/25 transition flex items-center space-x-2">
             <i class="ph ph-sparkle text-lg"></i>
-            <span>Formulate My Strategy</span>
+            <span>Formulate Plan</span>
           </button>
           <button onclick="switchTab('tab-advisor')" class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700 transition flex items-center space-x-2">
             <i class="ph ph-microphone text-lg text-emerald-400"></i>
-            <span>Ask AI Advisor</span>
+            <span>Ask Advisor</span>
           </button>
         </div>
       </div>
@@ -177,16 +169,16 @@
           <div class="flex items-center justify-between pb-3 border-b border-slate-800">
             <div class="flex items-center space-x-2">
               <i class="ph ph-sliders text-brand-400 text-xl"></i>
-              <h2 class="text-lg font-bold text-white">Financial Profile & Inputs</h2>
+              <h2 class="text-lg font-bold text-white">Your Financial Profile</h2>
             </div>
-            <span class="text-xs text-slate-400">Live Diagnostics</span>
+            <span class="text-xs text-slate-400">Fill your details</span>
           </div>
 
           <form id="cashflow-form" onsubmit="event.preventDefault(); recalculateAll();" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-medium text-slate-300 mb-1">Your Age</label>
-                <input type="number" id="inp-age" value="28" min="18" max="90" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                <input type="number" id="inp-age" placeholder="e.g. 28" min="18" max="90" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-300 mb-1">Dependents</label>
@@ -201,7 +193,7 @@
               <label class="block text-xs font-medium text-slate-300 mb-1">Monthly In-Hand Net Income</label>
               <div class="relative">
                 <span class="absolute left-3 top-2 text-slate-400 text-sm">₹</span>
-                <input type="number" id="inp-income" value="85000" step="1000" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                <input type="number" id="inp-income" placeholder="e.g. 85000" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
               </div>
             </div>
 
@@ -210,15 +202,15 @@
                 <label class="block text-xs font-medium text-slate-300 mb-1">Mandatory Living Expenses</label>
                 <div class="relative">
                   <span class="absolute left-3 top-2 text-slate-400 text-sm">₹</span>
-                  <input type="number" id="inp-mandatory-expense" value="35000" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                  <input type="number" id="inp-mandatory-expense" placeholder="e.g. 35000" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
                 </div>
-                <span class="text-[10px] text-slate-500">Housing, groceries, utilities</span>
+                <span class="text-[10px] text-slate-500">Rent, groceries, utilities</span>
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-300 mb-1">Discretionary Spending</label>
                 <div class="relative">
                   <span class="absolute left-3 top-2 text-slate-400 text-sm">₹</span>
-                  <input type="number" id="inp-discretionary-expense" value="18000" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                  <input type="number" id="inp-discretionary-expense" placeholder="e.g. 15000" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
                 </div>
                 <span class="text-[10px] text-slate-500">Dining, shopping, lifestyle</span>
               </div>
@@ -229,17 +221,17 @@
                 <label class="block text-xs font-medium text-slate-300 mb-1">Monthly Debt / EMIs</label>
                 <div class="relative">
                   <span class="absolute left-3 top-2 text-slate-400 text-sm">₹</span>
-                  <input type="number" id="inp-debt-emi" value="0" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                  <input type="number" id="inp-debt-emi" placeholder="e.g. 0" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
                 </div>
-                <span class="text-[10px] text-slate-500">Loans or revolving balances</span>
+                <span class="text-[10px] text-slate-500">Loans or credit card dues</span>
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-300 mb-1">Liquid / Cash Reserves</label>
                 <div class="relative">
                   <span class="absolute left-3 top-2 text-slate-400 text-sm">₹</span>
-                  <input type="number" id="inp-liquid-savings" value="150000" step="5000" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                  <input type="number" id="inp-liquid-savings" placeholder="e.g. 100000" step="5000" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
                 </div>
-                <span class="text-[10px] text-slate-500">Bank accounts & liquid funds</span>
+                <span class="text-[10px] text-slate-500">Bank balance & liquid funds</span>
               </div>
             </div>
 
@@ -277,7 +269,7 @@
             <div class="glass-card rounded-2xl p-5 border border-slate-800">
               <span class="text-xs text-slate-400 font-medium">Net Monthly Surplus</span>
               <div class="mt-2">
-                <span id="metric-surplus" class="text-2xl font-extrabold text-emerald-400">₹32,000</span>
+                <span id="metric-surplus" class="text-2xl font-extrabold text-slate-400">--</span>
               </div>
               <p class="text-[11px] text-slate-400 mt-1">Available for savings & goals</p>
             </div>
@@ -285,7 +277,7 @@
             <div class="glass-card rounded-2xl p-5 border border-slate-800">
               <span class="text-xs text-slate-400 font-medium">Savings Rate</span>
               <div class="mt-2">
-                <span id="metric-savings-rate" class="text-2xl font-extrabold text-white">37.6%</span>
+                <span id="metric-savings-rate" class="text-2xl font-extrabold text-slate-400">--</span>
               </div>
               <p class="text-[11px] text-slate-400 mt-1">Surplus ÷ Total Net Income</p>
             </div>
@@ -293,9 +285,9 @@
             <div class="glass-card rounded-2xl p-5 border border-slate-800">
               <span class="text-xs text-slate-400 font-medium">Liquid Runway</span>
               <div class="mt-2">
-                <span id="metric-runway" class="text-2xl font-extrabold text-sky-400">4.3 Mo</span>
+                <span id="metric-runway" class="text-2xl font-extrabold text-slate-400">--</span>
               </div>
-              <p class="text-[11px] text-slate-400 mt-1">Liquid reserves ÷ Mandatory outlays</p>
+              <p class="text-[11px] text-slate-400 mt-1">Liquid reserves ÷ Mandatory costs</p>
             </div>
 
           </div>
@@ -308,9 +300,9 @@
                   <i class="ph ph-chart-donut text-brand-400"></i>
                   <span>Monthly Inflow vs Outflows Distribution</span>
                 </h3>
-                <p class="text-xs text-slate-400">Where each rupee of your monthly income is allocated</p>
+                <p class="text-xs text-slate-400">Allocation across mandatory living, discretionary, debt, and surplus</p>
               </div>
-              <span id="badge-debt-ratio" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">DTI: 0%</span>
+              <span id="badge-debt-ratio" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">DTI: --</span>
             </div>
 
             <div class="h-64 w-full">
@@ -318,18 +310,18 @@
             </div>
           </div>
 
-          <!-- Open-Ended Strategy Trigger Banner -->
+          <!-- Strategy Trigger Banner -->
           <div class="p-6 rounded-2xl glass-card border border-brand-500/30 bg-gradient-to-r from-navy-900 to-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <span class="text-xs text-brand-400 font-bold uppercase tracking-wider">Dynamic Strategic Reasoning</span>
-              <h4 class="text-base font-bold text-white mt-0.5">Let Sarvam AI analyze your unique profile</h4>
+              <span class="text-xs text-brand-400 font-bold uppercase tracking-wider">Comprehensive Financial Plan</span>
+              <h4 class="text-base font-bold text-white mt-0.5">Formulate a roadmap for your situation</h4>
               <p class="text-xs text-slate-300 mt-1 max-w-md">
-                The built-in AI will evaluate your cashflow, safety cushion, liabilities, and personal goals, recommending the most appropriate framework for you.
+                Get a thorough evaluation of your cash flow, obligations, and goals with an actionable plan.
               </p>
             </div>
             <button onclick="triggerAiStrategy()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-semibold text-xs shadow-lg shadow-brand-500/25 transition whitespace-nowrap flex items-center space-x-2">
               <i class="ph ph-sparkle text-base"></i>
-              <span>Generate Strategy</span>
+              <span>Formulate My Strategy</span>
             </button>
           </div>
 
@@ -343,7 +335,6 @@
     <!-- ======================================================== -->
     <section id="tab-goals" class="tab-content hidden space-y-6">
       
-      <!-- Top Grid: Custom Goals List & Net Worth -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <!-- Left: Goals Manager (7 cols) -->
@@ -354,7 +345,7 @@
                 <i class="ph ph-target text-brand-400"></i>
                 <span>Your Personal Goals</span>
               </h3>
-              <p class="text-xs text-slate-400">Track whatever targets matter to you: home, business, education, retirement, sabbatical</p>
+              <p class="text-xs text-slate-400">Define whatever targets matter to you: home, education, emergency fund, or retirement</p>
             </div>
             <button onclick="showAddGoalModal()" class="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition flex items-center space-x-1">
               <i class="ph ph-plus"></i>
@@ -367,12 +358,12 @@
           </div>
 
           <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
-            <span class="text-slate-300">Total Monthly Savings Needed for All Stated Goals:</span>
+            <span class="text-slate-300">Total Monthly Savings Needed for Stated Goals:</span>
             <span id="txt-goals-total-needed" class="font-bold text-brand-400 text-sm">₹0/mo</span>
           </div>
         </div>
 
-        <!-- Right: Net Worth & Assets Overview (5 cols) -->
+        <!-- Right: Net Worth & Compounding (5 cols) -->
         <div class="lg:col-span-5 space-y-6">
           
           <!-- Net Worth Summary Card -->
@@ -407,7 +398,7 @@
             </div>
           </div>
 
-          <!-- Open Compounding Simulator -->
+          <!-- Compounding Simulator -->
           <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
             <h3 class="text-sm font-bold text-white flex items-center space-x-2">
               <i class="ph ph-trend-up text-brand-400"></i>
@@ -418,21 +409,21 @@
             <div class="grid grid-cols-3 gap-2 text-xs">
               <div>
                 <label class="block text-[10px] text-slate-400 mb-1">Monthly Invest</label>
-                <input type="number" id="sim-monthly" value="15000" step="1000" oninput="runSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                <input type="number" id="sim-monthly" placeholder="e.g. 15000" step="1000" oninput="runSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
               </div>
               <div>
                 <label class="block text-[10px] text-slate-400 mb-1">Growth Rate %</label>
-                <input type="number" id="sim-rate" value="10" step="0.5" oninput="runSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                <input type="number" id="sim-rate" placeholder="e.g. 10" step="0.5" oninput="runSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
               </div>
               <div>
                 <label class="block text-[10px] text-slate-400 mb-1">Years</label>
-                <input type="number" id="sim-years" value="15" min="1" max="40" oninput="runSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                <input type="number" id="sim-years" placeholder="e.g. 15" min="1" max="40" oninput="runSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
               </div>
             </div>
 
             <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs flex justify-between items-center">
               <span class="text-slate-400">Projected Corpus:</span>
-              <span id="sim-result-value" class="font-extrabold text-brand-400 text-sm">₹62.7 L</span>
+              <span id="sim-result-value" class="font-extrabold text-brand-400 text-sm">₹0</span>
             </div>
           </div>
 
@@ -452,14 +443,13 @@
         <!-- Left: Add Expense & Breakdown (5 cols) -->
         <div class="lg:col-span-5 space-y-6">
           
-          <!-- Add Expense Card -->
           <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
             <div class="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 class="text-sm font-bold text-white flex items-center space-x-2">
                 <i class="ph ph-plus-circle text-brand-400"></i>
                 <span>Log Transaction</span>
               </h3>
-              <span class="text-xs text-slate-400">Expense Tracker</span>
+              <span class="text-xs text-slate-400">Expense Ledger</span>
             </div>
 
             <form id="add-expense-form" onsubmit="event.preventDefault(); handleAddExpense();" class="space-y-3">
@@ -481,7 +471,7 @@
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-medium text-slate-300 mb-1">Amount (₹)</label>
-                  <input type="number" id="exp-amount" required placeholder="1200" step="50" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                  <input type="number" id="exp-amount" required placeholder="e.g. 1200" step="50" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-slate-300 mb-1">Date</label>
@@ -491,7 +481,7 @@
 
               <div>
                 <label class="block text-xs font-medium text-slate-300 mb-1">Description / Note</label>
-                <input type="text" id="exp-desc" placeholder="e.g. Broadband renewal, Groceries" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                <input type="text" id="exp-desc" placeholder="e.g. Internet bill, Groceries" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
               </div>
 
               <button type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition shadow-lg shadow-brand-600/20 flex items-center justify-center space-x-1.5">
@@ -501,7 +491,6 @@
             </form>
           </div>
 
-          <!-- Expense Category Pie Chart -->
           <div class="glass-card rounded-2xl p-6 border border-slate-800">
             <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Category Spending Distribution</h4>
             <div class="w-48 h-48 mx-auto my-2">
@@ -514,10 +503,9 @@
 
         </div>
 
-        <!-- Right: Expense Ledger & AI Expense Audit (7 cols) -->
+        <!-- Right: Expense Ledger & AI Audit (7 cols) -->
         <div class="lg:col-span-7 space-y-6">
           
-          <!-- AI Expense Audit Card -->
           <div class="glass-card rounded-2xl p-6 border border-brand-500/30 bg-gradient-to-br from-navy-900 via-slate-900 to-brand-950/40 space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div class="flex items-center space-x-3">
@@ -525,7 +513,7 @@
                   <i class="ph ph-magnifying-glass-chart"></i>
                 </div>
                 <div>
-                  <h3 class="text-base font-bold text-white">AI Cash Flow & Spending Audit</h3>
+                  <h3 class="text-base font-bold text-white">Expense & Spending Review</h3>
                   <p class="text-xs text-slate-300">Reviews logged expenses to identify optimization opportunities</p>
                 </div>
               </div>
@@ -535,22 +523,17 @@
               </button>
             </div>
 
-            <!-- Doctor Result Box -->
             <div id="ai-doctor-result" class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 whitespace-pre-line leading-relaxed max-h-72 overflow-y-auto">
-              Click <strong class="text-brand-400">"Audit My Expenses"</strong> to evaluate logged spending patterns. Sarvam AI will evaluate your outflows and suggest realistic cash-flow optimizations based on your specific situation.
+              Click <strong class="text-brand-400">"Audit My Expenses"</strong> to evaluate logged spending patterns and receive practical suggestions.
             </div>
           </div>
 
-          <!-- Expense Ledger Table -->
           <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-3">
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-bold text-white flex items-center space-x-2">
                 <i class="ph ph-list-dashes text-brand-400"></i>
                 <span>Logged Transactions (<span id="count-expenses">0</span>)</span>
               </h3>
-              <button onclick="resetSampleExpenses()" class="text-xs text-slate-400 hover:text-slate-200 underline">
-                Load Sample Items
-              </button>
             </div>
 
             <div class="overflow-x-auto max-h-80 overflow-y-auto">
@@ -578,23 +561,22 @@
     </section>
 
     <!-- ======================================================== -->
-    <!-- TAB 4: AI STRATEGIST & MULTILINGUAL VOICE                -->
+    <!-- TAB 4: AI ADVISOR & MULTILINGUAL VOICE                   -->
     <!-- ======================================================== -->
     <section id="tab-advisor" class="tab-content hidden space-y-6">
       
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Left: Settings, Strategy Formulator & Language (4 cols) -->
+        <!-- Left: Settings & Strategy (4 cols) -->
         <div class="lg:col-span-4 space-y-5">
           
-          <!-- Strategy Generator Card -->
           <div class="glass-card rounded-2xl p-6 border border-brand-500/30 bg-gradient-to-b from-slate-900 to-navy-950 space-y-3">
             <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
               <i class="ph ph-sparkle text-brand-400 text-lg"></i>
-              <h3 class="text-sm font-bold text-white">Custom Financial Strategy</h3>
+              <h3 class="text-sm font-bold text-white">Financial Strategy</h3>
             </div>
             <p class="text-xs text-slate-300 leading-relaxed">
-              Have Sarvam AI synthesize your income, obligations, liquid reserves, and stated goals into a tailored strategy with explicit reasoning.
+              Synthesize your income, obligations, liquid reserves, and stated goals into a tailored roadmap.
             </p>
             <button onclick="triggerAiStrategy()" id="btn-generate-strat" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-semibold text-xs shadow-md shadow-brand-500/25 transition flex items-center justify-center space-x-2">
               <i class="ph ph-brain text-sm"></i>
@@ -602,15 +584,14 @@
             </button>
           </div>
 
-          <!-- Audio & Language Settings Card -->
           <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
             <div class="flex items-center space-x-2 pb-3 border-b border-slate-800">
               <i class="ph ph-translate text-brand-400 text-lg"></i>
-              <h3 class="text-sm font-bold text-white">Multilingual Voice AI</h3>
+              <h3 class="text-sm font-bold text-white">Voice & Language</h3>
             </div>
 
             <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Language (बोलचाल / भाषा)</label>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Language (भाषा)</label>
               <select id="sel-language" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
                 <option value="mr-IN">Marathi (मराठी - mr-IN)</option>
                 <option value="hi-IN">Hindi (हिंदी - hi-IN)</option>
@@ -627,26 +608,14 @@
             <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
               <div>
                 <span class="text-xs font-semibold text-slate-200 block">Auto Voice Output</span>
-                <span class="text-[10px] text-slate-400">Play spoken answers via Sarvam Bulbul</span>
+                <span class="text-[10px] text-slate-400">Play spoken answers automatically</span>
               </div>
               <input type="checkbox" id="chk-auto-voice" checked class="w-4 h-4 accent-brand-500 rounded cursor-pointer">
             </div>
-
-            <!-- Optional Custom Backend URL for Static Deployments -->
-            <div class="pt-2 border-t border-slate-800 text-xs space-y-1">
-              <details class="text-[11px] text-slate-400 cursor-pointer">
-                <summary class="hover:text-slate-200 font-medium">Backend Connection Settings</summary>
-                <div class="mt-2 space-y-2">
-                  <label class="block text-[10px] text-slate-400">API Host URL (leave empty for same origin):</label>
-                  <input type="text" id="inp-api-host" placeholder="e.g. http://127.0.0.1:8000" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-brand-500">
-                </div>
-              </details>
-            </div>
           </div>
 
-          <!-- Suggested Inquiries -->
           <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-3">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Common Questions</h4>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Inquiries</h4>
             <div class="flex flex-col space-y-2 text-xs">
               <button onclick="sendQuickPrompt('माझ्या सध्याच्या उत्पन्नानुसार मी माझ्या उद्दिष्टांसाठी कशी बचत करू शकतो?')" class="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-left transition flex items-center justify-between">
                 <span>माझ्या उद्दिष्टांसाठी बचत कशी करावी? (Marathi)</span>
@@ -660,10 +629,6 @@
                 <span>Prioritizing debt vs investments</span>
                 <i class="ph ph-arrow-right text-slate-500"></i>
               </button>
-              <button onclick="sendQuickPrompt('How can I establish an adequate safety buffer given my expense stability?')" class="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-left transition flex items-center justify-between">
-                <span>Establishing a safety reserve</span>
-                <i class="ph ph-arrow-right text-slate-500"></i>
-              </button>
             </div>
           </div>
 
@@ -672,75 +637,59 @@
         <!-- Right: Interactive Chat Interface (8 cols) -->
         <div class="lg:col-span-8 glass-card rounded-2xl border border-slate-800 flex flex-col h-[650px] shadow-2xl overflow-hidden">
           
-          <!-- Chat Header -->
           <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/70">
             <div class="flex items-center space-x-3">
               <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-white text-lg font-bold shadow-md shadow-brand-500/20">
                 <i class="ph ph-brain"></i>
               </div>
               <div>
-                <h3 class="text-sm font-bold text-white">Sarvam Financial Strategist</h3>
+                <h3 class="text-sm font-bold text-white">Financial Advisor</h3>
                 <span class="text-[11px] text-emerald-400 flex items-center space-x-1">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  <span>Model: sarvam-105b-conversations</span>
+                  <span>Active</span>
                 </span>
               </div>
             </div>
 
-            <div class="flex items-center space-x-2">
-              <button onclick="clearChat()" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition">
-                <i class="ph ph-trash mr-1"></i> Clear
-              </button>
-            </div>
+            <button onclick="clearChat()" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition">
+              <i class="ph ph-trash mr-1"></i> Clear
+            </button>
           </div>
 
-          <!-- Messages Scroll Area -->
           <div id="chat-messages" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
-            
-            <!-- Default Welcome Message -->
             <div class="flex items-start space-x-3">
               <div class="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold flex-shrink-0 text-sm">
                 SA
               </div>
               <div class="max-w-[85%] rounded-2xl rounded-tl-none p-4 bg-slate-900 border border-slate-800 text-xs sm:text-sm text-slate-200 space-y-2 shadow-sm">
                 <p>
-                  <strong>Namaste! / नमस्कार!</strong> I am your general-purpose personal finance advisor powered by <strong>Sarvam AI</strong>.
-                </p>
-                <p>
-                  I do not promote any single plan or strategy by default. Instead, I analyze your unique income, obligations, assets, and goals to recommend what makes sense for your situation, with explicit reasoning.
+                  <strong>Namaste! / नमस्कार!</strong> I can help you evaluate your cash flow, plan for your personal goals, review your expenses, or explore investment strategies.
                 </p>
                 <p class="text-slate-400 text-xs">
                   Ask me anything in Marathi, Hindi, English, or any Indian language, or click the <i class="ph ph-microphone text-brand-400"></i> microphone button below to speak!
                 </p>
               </div>
             </div>
-
           </div>
 
-          <!-- Recording Status Banner -->
           <div id="recording-indicator" class="hidden px-4 py-2 bg-red-950/80 border-t border-red-500/30 text-red-300 text-xs flex items-center justify-between">
             <div class="flex items-center space-x-2">
               <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-              <span class="font-semibold">Recording... Speak in Marathi, Hindi, English, or any Indian language!</span>
+              <span class="font-semibold">Listening... Speak in Marathi, Hindi, English, or any Indian language</span>
             </div>
             <button onclick="stopVoiceRecording()" class="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs">
               Stop & Transcribe
             </button>
           </div>
 
-          <!-- Chat Input Bar -->
           <div class="p-3 sm:p-4 border-t border-slate-800 bg-slate-900/60">
             <form id="chat-form" onsubmit="event.preventDefault(); handleSendMessage();" class="flex items-center space-x-2">
-              
-              <!-- Microphone Button -->
               <button type="button" id="btn-mic" onclick="toggleVoiceRecording()" title="Speak in Marathi, Hindi, English..." class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-brand-400 hover:text-brand-300 border border-slate-700 transition flex-shrink-0">
                 <i class="ph ph-microphone text-xl"></i>
               </button>
 
-              <!-- Text Input -->
               <input type="text" id="chat-input" placeholder="Ask anything about financial planning, debt, saving, or investments..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500">
 
-              <!-- Send Button -->
               <button type="submit" id="btn-send" class="p-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/30 transition flex-shrink-0">
                 <i class="ph ph-paper-plane-right text-lg"></i>
               </button>
@@ -771,7 +720,7 @@
       <form onsubmit="event.preventDefault(); handleAddGoal();" class="space-y-3 text-xs">
         <div>
           <label class="block text-slate-300 mb-1">Goal Name / Title</label>
-          <input type="text" id="modal-goal-title" required placeholder="e.g. Home Down Payment, Child Education, Retirement" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          <input type="text" id="modal-goal-title" required placeholder="e.g. Home Down Payment, Child Education, Emergency Fund" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -781,18 +730,18 @@
           </div>
           <div>
             <label class="block text-slate-300 mb-1">Currently Saved (₹)</label>
-            <input type="number" id="modal-goal-current" value="0" step="5000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+            <input type="number" id="modal-goal-current" placeholder="0" step="5000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-slate-300 mb-1">Timeline (Years)</label>
-            <input type="number" id="modal-goal-years" value="3" step="0.5" min="0.5" max="40" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+            <input type="number" id="modal-goal-years" placeholder="3" step="0.5" min="0.5" max="40" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
           </div>
           <div>
             <label class="block text-slate-300 mb-1">Expected Return %</label>
-            <input type="number" id="modal-goal-roi" value="7.0" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+            <input type="number" id="modal-goal-roi" placeholder="7.0" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
           </div>
         </div>
 
@@ -852,45 +801,6 @@
           Save Entry
         </button>
       </form>
-    </div>
-  </div>
-
-  <!-- Netlify Deployment Modal -->
-  <div id="modal-netlify" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass-card rounded-2xl max-w-xl w-full p-6 sm:p-8 border border-slate-700 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <div class="flex items-center space-x-2">
-          <i class="ph ph-cloud text-xl text-sky-400"></i>
-          <h3 class="text-base font-bold text-white">Deploying to Netlify</h3>
-        </div>
-        <button onclick="closeNetlifyModal()" class="text-slate-400 hover:text-white text-lg">
-          <i class="ph ph-x"></i>
-        </button>
-      </div>
-
-      <div class="text-xs text-slate-300 space-y-3">
-        <p>This project is configured for Netlify deployment with <code class="bg-slate-800 text-brand-400 px-1 py-0.5 rounded">netlify.toml</code> and serverless functions in <code class="bg-slate-800 text-brand-400 px-1 py-0.5 rounded">netlify/functions/api.py</code>.</p>
-        
-        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-          <span class="font-bold text-white block">Step-by-Step Netlify Deployment:</span>
-          <ol class="list-decimal list-inside space-y-1 text-slate-300">
-            <li>Push repository to GitHub.</li>
-            <li>Go to <a href="https://app.netlify.com" target="_blank" class="text-sky-400 underline">app.netlify.com</a> and click <strong>Add new site &gt; Import an existing project</strong>.</li>
-            <li>Select GitHub and choose <code class="text-emerald-400">Personal-Finance-Manager</code>.</li>
-            <li>Netlify auto-detects <code class="text-brand-400">netlify.toml</code> for build settings.</li>
-            <li>Go to <strong>Site configuration &gt; Environment variables</strong> and add:
-              <br><code class="text-gold-400 font-mono">SARVAM_API_KEY = your_key_here</code>
-            </li>
-            <li>Click <strong>Deploy site</strong>. Netlify will deploy your static frontend and serverless Python API!</li>
-          </ol>
-        </div>
-      </div>
-
-      <div class="pt-2 flex justify-end">
-        <button onclick="closeNetlifyModal()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition">
-          Got It
-        </button>
-      </div>
     </div>
   </div>
 

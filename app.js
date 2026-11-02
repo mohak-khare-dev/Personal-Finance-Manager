@@ -1,4 +1,4 @@
-// Sarvam Artha - Open-Ended Personal Finance Manager & AI Strategist
+// Sarvam Artha - Personal Finance Manager & AI Advisor Client Logic
 
 let currentTab = 'tab-cashflow';
 let cashflowSplitChart = null;
@@ -9,48 +9,14 @@ let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
 
-// Default custom personal goals
-const DEFAULT_GOALS = [
-  { id: '1', title: 'Emergency Safety Reserve', target_amount: 250000, current_amount: 150000, target_years: 1.5, expected_roi_pct: 6.5, category: 'Safety' },
-  { id: '2', title: 'Higher Education / Skill Fund', target_amount: 500000, current_amount: 80000, target_years: 3.0, expected_roi_pct: 8.0, category: 'Growth' },
-  { id: '3', title: 'Long-Term Financial Independence', target_amount: 20000000, current_amount: 350000, target_years: 20.0, expected_roi_pct: 11.0, category: 'Independence' }
-];
+// User data starting empty unless loaded from localStorage
+let goals = JSON.parse(localStorage.getItem('sarvam_goals') || '[]');
+let assets = JSON.parse(localStorage.getItem('sarvam_assets') || '[]');
+let liabilities = JSON.parse(localStorage.getItem('sarvam_liabilities') || '[]');
+let expenses = JSON.parse(localStorage.getItem('sarvam_expenses') || '[]');
 
-// Default asset / liability items
-const DEFAULT_ASSETS = [
-  { id: 'a1', title: 'Savings Accounts & Sweep FDs', value: 150000, category: 'Cash / Liquid' },
-  { id: 'a2', title: 'Broad Index & Flexi-Cap Funds', value: 250000, category: 'Equities / Funds' },
-  { id: 'a3', title: 'Public Provident Fund (PPF)', value: 100000, category: 'Fixed Income / Debt' }
-];
-
-const DEFAULT_LIABILITIES = [
-  { id: 'l1', title: 'Education Loan', amount: 80000, monthly_emi: 4500, interest_rate: 8.5 }
-];
-
-const DEFAULT_EXPENSES = [
-  { id: '1', category: 'Rent & Housing', amount: 22000, description: 'Monthly Apartment Rent', date: '2026-11-01' },
-  { id: '2', category: 'Groceries & Food', amount: 8500, description: 'Blinkit & essentials', date: '2026-11-01' },
-  { id: '3', category: 'Dining Out & Delivery', amount: 4800, description: 'Food delivery & weekend dining', date: '2026-10-30' },
-  { id: '4', category: 'Subscriptions & OTT', amount: 2100, description: 'Streaming & gym memberships', date: '2026-10-28' },
-  { id: '5', category: 'Utilities & Bills', amount: 3500, description: 'Electricity & Internet', date: '2026-10-27' },
-  { id: '6', category: 'Commute & Fuel', amount: 4200, description: 'Fuel & Metro transit', date: '2026-10-25' },
-  { id: '7', category: 'Shopping & Lifestyle', amount: 5900, description: 'Apparel & gadgets', date: '2026-10-22' },
-  { id: '8', category: 'Healthcare', amount: 2000, description: 'Health supplements & pharmacy', date: '2026-10-20' },
-];
-
-let goals = JSON.parse(localStorage.getItem('sarvam_goals') || 'null') || [...DEFAULT_GOALS];
-let assets = JSON.parse(localStorage.getItem('sarvam_assets') || 'null') || [...DEFAULT_ASSETS];
-let liabilities = JSON.parse(localStorage.getItem('sarvam_liabilities') || 'null') || [...DEFAULT_LIABILITIES];
-let expenses = JSON.parse(localStorage.getItem('sarvam_expenses') || 'null') || [...DEFAULT_EXPENSES];
-
-// --- API Base URL Helper ---
+// --- API Endpoint Helper ---
 function getApiUrl(path) {
-  const customHost = (document.getElementById('inp-api-host')?.value || '').trim();
-  if (customHost) {
-    const cleanHost = customHost.replace(/\/+$/, '');
-    const cleanPath = path.replace(/^\/+/, '');
-    return `${cleanHost}/${cleanPath}`;
-  }
   return path;
 }
 
@@ -61,22 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     dateInput.value = new Date().toISOString().split('T')[0];
   }
 
-  const savedApiHost = localStorage.getItem('sarvam_api_host');
-  if (savedApiHost && document.getElementById('inp-api-host')) {
-    document.getElementById('inp-api-host').value = savedApiHost;
-  }
-
   loadSavedProfile();
   recalculateAll();
   renderGoalsList();
   renderExpensesList();
   renderExpensePieChart();
   runSim();
-});
-
-// Save API Host on change
-document.getElementById('inp-api-host')?.addEventListener('input', (e) => {
-  localStorage.setItem('sarvam_api_host', e.target.value.trim());
 });
 
 // --- Tab Switching ---
@@ -108,16 +64,23 @@ function switchTab(tabId) {
 
 // --- Profile Data Management ---
 function getProfileData() {
+  const ageVal = document.getElementById('inp-age')?.value;
+  const incomeVal = document.getElementById('inp-income')?.value;
+  const mandatoryVal = document.getElementById('inp-mandatory-expense')?.value;
+  const discretionaryVal = document.getElementById('inp-discretionary-expense')?.value;
+  const debtVal = document.getElementById('inp-debt-emi')?.value;
+  const savingsVal = document.getElementById('inp-liquid-savings')?.value;
+
   return {
-    age: parseInt(document.getElementById('inp-age').value) || 28,
-    monthly_income: parseFloat(document.getElementById('inp-income').value) || 85000,
-    mandatory_expenses: parseFloat(document.getElementById('inp-mandatory-expense').value) || 35000,
-    discretionary_expenses: parseFloat(document.getElementById('inp-discretionary-expense').value) || 18000,
-    monthly_debt_emi: parseFloat(document.getElementById('inp-debt-emi').value) || 0,
-    liquid_savings: parseFloat(document.getElementById('inp-liquid-savings').value) || 150000,
-    has_dependents: document.getElementById('inp-dependents').value === 'true',
-    income_stability: document.getElementById('inp-stability').value || 'stable',
-    risk_profile: document.getElementById('inp-risk').value || 'moderate',
+    age: ageVal ? parseInt(ageVal) : null,
+    monthly_income: incomeVal ? parseFloat(incomeVal) : 0,
+    mandatory_expenses: mandatoryVal ? parseFloat(mandatoryVal) : 0,
+    discretionary_expenses: discretionaryVal ? parseFloat(discretionaryVal) : 0,
+    monthly_debt_emi: debtVal ? parseFloat(debtVal) : 0,
+    liquid_savings: savingsVal ? parseFloat(savingsVal) : 0,
+    has_dependents: document.getElementById('inp-dependents')?.value === 'true',
+    income_stability: document.getElementById('inp-stability')?.value || 'stable',
+    risk_profile: document.getElementById('inp-risk')?.value || 'moderate',
     goals: goals,
     assets: assets,
     liabilities: liabilities
@@ -125,11 +88,11 @@ function getProfileData() {
 }
 
 function saveProfile(data) {
-  localStorage.setItem('sarvam_profile_v2', JSON.stringify(data));
+  localStorage.setItem('sarvam_profile_clean', JSON.stringify(data));
 }
 
 function loadSavedProfile() {
-  const saved = localStorage.getItem('sarvam_profile_v2');
+  const saved = localStorage.getItem('sarvam_profile_clean');
   if (saved) {
     try {
       const p = JSON.parse(saved);
@@ -137,8 +100,8 @@ function loadSavedProfile() {
       if (p.monthly_income) document.getElementById('inp-income').value = p.monthly_income;
       if (p.mandatory_expenses) document.getElementById('inp-mandatory-expense').value = p.mandatory_expenses;
       if (p.discretionary_expenses) document.getElementById('inp-discretionary-expense').value = p.discretionary_expenses;
-      if (p.monthly_debt_emi !== undefined) document.getElementById('inp-debt-emi').value = p.monthly_debt_emi;
-      if (p.liquid_savings !== undefined) document.getElementById('inp-liquid-savings').value = p.liquid_savings;
+      if (p.monthly_debt_emi !== undefined && p.monthly_debt_emi !== null) document.getElementById('inp-debt-emi').value = p.monthly_debt_emi;
+      if (p.liquid_savings !== undefined && p.liquid_savings !== null) document.getElementById('inp-liquid-savings').value = p.liquid_savings;
       if (p.has_dependents !== undefined) document.getElementById('inp-dependents').value = String(p.has_dependents);
       if (p.income_stability) document.getElementById('inp-stability').value = p.income_stability;
       if (p.risk_profile) document.getElementById('inp-risk').value = p.risk_profile;
@@ -152,6 +115,12 @@ async function recalculateAll() {
   const profile = getProfileData();
   saveProfile(profile);
 
+  // If user hasn't entered income or expenses, show blank state
+  if (profile.monthly_income <= 0 && profile.mandatory_expenses <= 0) {
+    renderEmptyMetrics();
+    return;
+  }
+
   try {
     const res = await fetch(getApiUrl('/api/profile/calculate'), {
       method: 'POST',
@@ -160,8 +129,6 @@ async function recalculateAll() {
     });
     
     if (!res.ok) {
-      const text = await res.text();
-      console.warn("Calculate non-200 response:", text);
       calculateLocallyFallback(profile);
       return;
     }
@@ -169,9 +136,25 @@ async function recalculateAll() {
     const data = await res.json();
     updateUIWithCalculations(data);
   } catch (err) {
-    console.warn("Calculation API unreachable, using local math fallback:", err);
     calculateLocallyFallback(profile);
   }
+}
+
+function renderEmptyMetrics() {
+  document.getElementById('metric-surplus').textContent = '--';
+  document.getElementById('metric-savings-rate').textContent = '--';
+  document.getElementById('metric-runway').textContent = '--';
+  document.getElementById('badge-debt-ratio').textContent = 'DTI: --';
+
+  const totalAssets = assets.reduce((sum, a) => sum + (parseFloat(a.value) || 0), 0);
+  const totalDebts = liabilities.reduce((sum, l) => sum + (parseFloat(l.amount) || 0), 0);
+
+  document.getElementById('networth-assets').textContent = `₹${formatCr(totalAssets)}`;
+  document.getElementById('networth-debts').textContent = `₹${formatCr(totalDebts)}`;
+  document.getElementById('networth-total').textContent = `₹${formatCr(totalAssets - totalDebts)}`;
+
+  renderCashflowSplitChart({ mandatory_expenses: 0, discretionary_expenses: 0, debt_obligations: 0, net_monthly_surplus: 0 });
+  renderAssetsSplitChart({ total_assets: totalAssets });
 }
 
 function calculateLocallyFallback(profile) {
@@ -199,9 +182,6 @@ function calculateLocallyFallback(profile) {
       total_liabilities: totalDebts,
       net_worth: totalAssets - totalDebts,
       asset_breakdown: {}
-    },
-    goals_evaluation: {
-      total_required_monthly: 0
     }
   });
 }
@@ -210,7 +190,6 @@ function updateUIWithCalculations(data) {
   const cf = data.cashflow;
   const nw = data.net_worth;
 
-  // 1. Metric cards
   const surplusEl = document.getElementById('metric-surplus');
   const srEl = document.getElementById('metric-savings-rate');
   const runwayEl = document.getElementById('metric-runway');
@@ -222,9 +201,8 @@ function updateUIWithCalculations(data) {
   }
   if (srEl) srEl.textContent = `${cf.savings_rate_pct}%`;
   if (runwayEl) runwayEl.textContent = `${cf.liquid_runway_months} Mo`;
-  if (dtiBadge) dtiBadge.textContent = `Debt-to-Income: ${cf.debt_to_income_pct}%`;
+  if (dtiBadge) dtiBadge.textContent = `DTI: ${cf.debt_to_income_pct}%`;
 
-  // 2. Net Worth Cards
   const nwAssetsEl = document.getElementById('networth-assets');
   const nwDebtsEl = document.getElementById('networth-debts');
   const nwTotalEl = document.getElementById('networth-total');
@@ -236,7 +214,6 @@ function updateUIWithCalculations(data) {
     nwTotalEl.className = nw.net_worth >= 0 ? 'text-sm font-extrabold text-white' : 'text-sm font-extrabold text-rose-400';
   }
 
-  // 3. Render charts
   renderCashflowSplitChart(cf);
   renderAssetsSplitChart(nw);
 }
@@ -249,18 +226,23 @@ function renderCashflowSplitChart(cf) {
 
   if (cashflowSplitChart) cashflowSplitChart.destroy();
 
-  const surplus = Math.max(0, cf.net_monthly_surplus);
-  const mandatory = cf.mandatory_expenses;
-  const discretionary = cf.discretionary_expenses;
-  const debt = cf.debt_obligations;
+  const surplus = Math.max(0, cf.net_monthly_surplus || 0);
+  const mandatory = cf.mandatory_expenses || 0;
+  const discretionary = cf.discretionary_expenses || 0;
+  const debt = cf.debt_obligations || 0;
+
+  const total = surplus + mandatory + discretionary + debt;
+  const dataValues = total > 0 ? [mandatory, discretionary, debt, surplus] : [1];
+  const labels = total > 0 ? ['Mandatory Living', 'Discretionary', 'Debt EMIs', 'Surplus'] : ['No Data Entered'];
+  const colors = total > 0 ? ['#3b82f6', '#f59e0b', '#ef4444', '#10b981'] : ['#334155'];
 
   cashflowSplitChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Mandatory Living', 'Discretionary', 'Debt EMIs', 'Surplus / Available'],
+      labels: labels,
       datasets: [{
-        data: [mandatory, discretionary, debt, surplus],
-        backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444', '#10b981'],
+        data: dataValues,
+        backgroundColor: colors,
         borderWidth: 2,
         borderColor: '#0b1120',
         hoverOffset: 6
@@ -277,7 +259,7 @@ function renderCashflowSplitChart(cf) {
         tooltip: {
           callbacks: {
             label: function(c) {
-              return ` ${c.label}: ₹${formatCurrency(c.raw)}`;
+              return total > 0 ? ` ${c.label}: ₹${formatCurrency(c.raw)}` : ' Enter your profile numbers';
             }
           }
         }
@@ -353,10 +335,10 @@ function renderExpensePieChart() {
   expensePieChart = new Chart(ctx, {
     type: 'pie',
     data: {
-      labels: labels,
+      labels: labels.length > 0 ? labels : ['No Expenses Logged'],
       datasets: [{
-        data: data,
-        backgroundColor: colors.slice(0, labels.length),
+        data: data.length > 0 ? data : [1],
+        backgroundColor: data.length > 0 ? colors.slice(0, labels.length) : ['#334155'],
         borderWidth: 2,
         borderColor: '#0b1120'
       }]
@@ -370,7 +352,7 @@ function renderExpensePieChart() {
           callbacks: {
             label: function(c) {
               const pct = total > 0 ? Math.round((c.raw / total) * 100) : 0;
-              return ` ${c.label}: ₹${formatCurrency(c.raw)} (${pct}%)`;
+              return total > 0 ? ` ${c.label}: ₹${formatCurrency(c.raw)} (${pct}%)` : ' No items';
             }
           }
         }
@@ -386,9 +368,14 @@ function renderExpensePieChart() {
 
 // --- Compounding Simulator ---
 function runSim() {
-  const monthly = parseFloat(document.getElementById('sim-monthly')?.value) || 15000;
-  const rate = parseFloat(document.getElementById('sim-rate')?.value) || 10;
-  const years = parseInt(document.getElementById('sim-years')?.value) || 15;
+  const monthly = parseFloat(document.getElementById('sim-monthly')?.value) || 0;
+  const rate = parseFloat(document.getElementById('sim-rate')?.value) || 0;
+  const years = parseInt(document.getElementById('sim-years')?.value) || 0;
+
+  if (monthly <= 0 || rate <= 0 || years <= 0) {
+    document.getElementById('sim-result-value').textContent = '₹0';
+    return;
+  }
 
   const monthlyRate = (rate / 100) / 12;
   const months = years * 12;
@@ -412,7 +399,8 @@ function renderGoalsList() {
 
   container.innerHTML = '';
   if (goals.length === 0) {
-    container.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs">No personal goals added yet. Click "Add Goal" above to define one.</div>`;
+    container.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs">No personal goals added yet. Click "Add Goal" above to create one.</div>`;
+    document.getElementById('txt-goals-total-needed').textContent = '₹0/mo';
     return;
   }
 
@@ -420,8 +408,8 @@ function renderGoalsList() {
 
   goals.forEach(g => {
     const shortfall = Math.max(0, g.target_amount - g.current_amount);
-    const months = g.target_years * 12;
-    const r = (g.expected_roi_pct / 100) / 12;
+    const months = (g.target_years || 1) * 12;
+    const r = ((g.expected_roi_pct || 6) / 100) / 12;
     let reqMonthly = 0;
     if (shortfall > 0) {
       if (r > 0) {
@@ -541,7 +529,7 @@ function renderExpensesList() {
   if (countEl) countEl.textContent = expenses.length;
 
   if (expenses.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">No expenses logged yet. Add your first expense above.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">No transactions logged yet. Add your first entry above.</td></tr>`;
     return;
   }
 
@@ -596,24 +584,17 @@ function deleteExpense(id) {
   renderExpensePieChart();
 }
 
-function resetSampleExpenses() {
-  expenses = [...DEFAULT_EXPENSES];
-  localStorage.setItem('sarvam_expenses', JSON.stringify(expenses));
-  renderExpensesList();
-  renderExpensePieChart();
-}
-
 // --- AI Expense Audit ---
 async function auditExpensesWithAI() {
   const resultBox = document.getElementById('ai-doctor-result');
   const btn = document.getElementById('btn-audit-expenses');
-  const income = parseFloat(document.getElementById('inp-income').value) || 85000;
+  const income = parseFloat(document.getElementById('inp-income')?.value) || 0;
 
   if (!resultBox) return;
 
   btn.disabled = true;
-  btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i><span>Analyzing with Sarvam AI...</span>`;
-  resultBox.textContent = "Sarvam AI is reviewing your outflows from first principles...";
+  btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i><span>Reviewing...</span>`;
+  resultBox.textContent = "Analyzing spending patterns...";
 
   try {
     const res = await fetch(getApiUrl('/api/advisor/audit-expenses'), {
@@ -624,14 +605,14 @@ async function auditExpensesWithAI() {
     
     if (!res.ok) {
       const text = await res.text();
-      handleApiError(resultBox, res.status, text);
+      resultBox.textContent = parseResponseError(res.status, text);
       return;
     }
 
     const data = await res.json();
     resultBox.textContent = data.audit_analysis || "No recommendations generated.";
   } catch (err) {
-    resultBox.textContent = `Backend error: ${err.message}. If running on static host, configure backend URL in AI Advisor tab.`;
+    resultBox.textContent = `Error: ${err.message}`;
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<i class="ph ph-sparkle text-sm"></i><span>Audit My Expenses</span>`;
@@ -644,17 +625,16 @@ async function triggerAiStrategy() {
   const btn = document.getElementById('btn-generate-strat');
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i><span>Formulating Strategy...</span>`;
+    btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i><span>Formulating Plan...</span>`;
   }
 
   const profile = getProfileData();
-  appendChatMessage('user', 'Please formulate a personalized financial strategy based on my current profile, cash flow, and goals.');
+  appendChatMessage('user', 'Please formulate a personalized financial plan based on my current profile, cash flow, and goals.');
 
-  // Loading indicator in chat
   const loadingDiv = document.createElement('div');
   loadingDiv.id = 'chat-loading-indicator';
   loadingDiv.className = 'flex items-center space-x-2 text-xs text-slate-400 pl-11';
-  loadingDiv.innerHTML = `<span class="w-2 h-2 rounded-full bg-brand-400 animate-ping"></span><span>Sarvam 105B evaluating profile & goals...</span>`;
+  loadingDiv.innerHTML = `<span class="w-2 h-2 rounded-full bg-brand-400 animate-ping"></span><span>Evaluating profile & goals...</span>`;
   document.getElementById('chat-messages').appendChild(loadingDiv);
   document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
 
@@ -669,8 +649,7 @@ async function triggerAiStrategy() {
 
     if (!res.ok) {
       const text = await res.text();
-      const errMsg = parseHtmlError(res.status, text);
-      appendChatMessage('assistant', errMsg);
+      appendChatMessage('assistant', parseResponseError(res.status, text));
       return;
     }
 
@@ -681,7 +660,7 @@ async function triggerAiStrategy() {
     }
   } catch (err) {
     loadingDiv.remove();
-    appendChatMessage('assistant', `Could not reach backend API: ${err.message}. Please verify the Python server is running (python run.py) or check the backend host setting.`);
+    appendChatMessage('assistant', `Could not reach advisor: ${err.message}`);
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -690,7 +669,7 @@ async function triggerAiStrategy() {
   }
 }
 
-// --- Sarvam Conversational & Multilingual Voice AI ---
+// --- Conversational & Multilingual Voice AI ---
 
 function appendChatMessage(role, content, audioBase64 = null) {
   const container = document.getElementById('chat-messages');
@@ -705,7 +684,7 @@ function appendChatMessage(role, content, audioBase64 = null) {
     audioButtonHtml = `
       <button onclick="playTTSAudio('${audioBase64}')" class="mt-2 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/30 text-xs transition">
         <i class="ph ph-speaker-high text-sm"></i>
-        <span>Play Spoken Voice (Bulbul TTS)</span>
+        <span>Listen to Answer</span>
       </button>
     `;
   }
@@ -744,14 +723,14 @@ async function handleSendMessage() {
   appendChatMessage('user', text);
   chatHistory.push({ role: 'user', content: text });
 
-  const autoVoice = document.getElementById('chk-auto-voice').checked;
-  const voiceLang = document.getElementById('sel-language').value || 'en-IN';
+  const autoVoice = document.getElementById('chk-auto-voice')?.checked || false;
+  const voiceLang = document.getElementById('sel-language')?.value || 'mr-IN';
   const profile = getProfileData();
 
   const loadingDiv = document.createElement('div');
   loadingDiv.id = 'chat-loading-indicator';
   loadingDiv.className = 'flex items-center space-x-2 text-xs text-slate-400 pl-11';
-  loadingDiv.innerHTML = `<span class="w-2 h-2 rounded-full bg-brand-400 animate-ping"></span><span>Sarvam 105B thinking...</span>`;
+  loadingDiv.innerHTML = `<span class="w-2 h-2 rounded-full bg-brand-400 animate-ping"></span><span>Thinking...</span>`;
   document.getElementById('chat-messages').appendChild(loadingDiv);
   document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
 
@@ -771,7 +750,7 @@ async function handleSendMessage() {
 
     if (!res.ok) {
       const text = await res.text();
-      appendChatMessage('assistant', parseHtmlError(res.status, text));
+      appendChatMessage('assistant', parseResponseError(res.status, text));
       return;
     }
 
@@ -788,7 +767,7 @@ async function handleSendMessage() {
     }
   } catch (err) {
     loadingDiv.remove();
-    appendChatMessage('assistant', `Connection error: ${err.message}. If deployed statically, ensure your Python server is running and configured.`);
+    appendChatMessage('assistant', `Connection error: ${err.message}`);
   }
 }
 
@@ -813,7 +792,7 @@ function clearChat() {
   `;
 }
 
-// --- Voice Recording & Sarvam Saaras STT (Fixed & Hardened) ---
+// --- Voice Recording & Speech-to-Text ---
 
 async function toggleVoiceRecording() {
   if (isRecording) {
@@ -835,7 +814,7 @@ async function startVoiceRecording() {
 
     mediaRecorder.onstop = async () => {
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-      await sendAudioToSarvamSTT(audioBlob);
+      await sendAudioToSTT(audioBlob);
     };
 
     mediaRecorder.start();
@@ -863,14 +842,13 @@ function stopVoiceRecording() {
   micBtn.classList.remove('bg-red-600', 'text-white', 'animate-pulse');
 }
 
-async function sendAudioToSarvamSTT(audioBlob) {
+async function sendAudioToSTT(audioBlob) {
   const input = document.getElementById('chat-input');
-  input.placeholder = "Transcribing with Sarvam Saaras...";
+  input.placeholder = "Transcribing speech...";
 
-  const langCode = document.getElementById('sel-language').value || 'mr-IN';
+  const langCode = document.getElementById('sel-language')?.value || 'mr-IN';
 
   try {
-    // Convert blob to base64 for rock-solid serverless JSON transport
     const base64Audio = await blobToBase64(audioBlob);
 
     const res = await fetch(getApiUrl('/api/voice/transcribe-json'), {
@@ -883,21 +861,20 @@ async function sendAudioToSarvamSTT(audioBlob) {
       })
     });
 
-    // Check if server returned HTML (e.g. 404 or 502 from static server)
     if (!res.ok) {
       const errText = await res.text();
-      const friendlyMsg = parseHtmlError(res.status, errText);
+      const friendlyMsg = parseResponseError(res.status, errText);
       input.placeholder = friendlyMsg;
-      alert(`Transcription Backend Note:\n${friendlyMsg}`);
+      alert(`Transcription Note:\n${friendlyMsg}`);
       return;
     }
 
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       const rawText = await res.text();
-      const friendlyMsg = parseHtmlError(res.status, rawText);
+      const friendlyMsg = parseResponseError(res.status, rawText);
       input.placeholder = friendlyMsg;
-      alert(`Transcription Backend Note:\n${friendlyMsg}`);
+      alert(`Transcription Note:\n${friendlyMsg}`);
       return;
     }
 
@@ -913,8 +890,7 @@ async function sendAudioToSarvamSTT(audioBlob) {
       }, 4000);
     }
   } catch (err) {
-    const errorMsg = `Transcription connection error: ${err.message}`;
-    input.placeholder = errorMsg;
+    input.placeholder = `Transcription error: ${err.message}`;
     console.error("STT Error:", err);
   }
 }
@@ -928,15 +904,11 @@ function blobToBase64(blob) {
   });
 }
 
-function parseHtmlError(statusCode, responseText) {
+function parseResponseError(statusCode, responseText) {
   if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
-    return `Server returned HTTP ${statusCode} (HTML page instead of API response). If testing on GitHub Pages or static host, the Python AI backend requires a server. Run 'python run.py' locally or deploy with Netlify.`;
+    return `Server returned HTTP ${statusCode}. If running on Netlify, please check that functions are deployed.`;
   }
-  return `Server error (${statusCode}): ${responseText.substring(0, 200)}`;
-}
-
-function handleApiError(targetEl, status, responseText) {
-  targetEl.textContent = parseHtmlError(status, responseText);
+  return `Error (${statusCode}): ${responseText.substring(0, 200)}`;
 }
 
 function playTTSAudio(base64Data) {
@@ -947,14 +919,6 @@ function playTTSAudio(base64Data) {
   } catch (e) {
     console.error("Playback failed:", e);
   }
-}
-
-// --- Netlify Modal ---
-function openNetlifyModal() {
-  document.getElementById('modal-netlify').classList.remove('hidden');
-}
-function closeNetlifyModal() {
-  document.getElementById('modal-netlify').classList.add('hidden');
 }
 
 // --- Formatting Helpers ---

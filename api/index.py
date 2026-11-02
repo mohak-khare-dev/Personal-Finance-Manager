@@ -1,22 +1,22 @@
 import os
-import json
+import base64
 from pathlib import Path
 from typing import List, Optional, Dict, Any
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from api.services.finance_calc import (
-    calculate_emergency_fund,
-    analyze_budget_rule,
-    calculate_bucket_allocation,
-    calculate_sip_projections,
-    calculate_fire_freedom
+    calculate_cashflow_health,
+    calculate_net_worth,
+    simulate_growth,
+    evaluate_custom_goals
 )
 from api.services.sarvam_service import (
     generate_chat_response,
+    generate_open_ended_strategy,
     audit_spending_leaks,
     transcribe_audio,
     synthesize_speech,
@@ -24,12 +24,11 @@ from api.services.sarvam_service import (
 )
 
 app = FastAPI(
-    title="Sarvam Artha - Personal Financial Well-Being & Sovereign Wealth",
-    description="Intelligent personal financial planning, bucket diversification, and multilingual voice advisory powered by Sarvam AI.",
-    version="1.0.0"
+    title="Sarvam Artha - Personal Finance Manager",
+    description="Intelligent, open-ended personal financial planning, cash flow tracking, and multilingual voice advisory powered by Sarvam AI.",
+    version="2.0.0"
 )
 
-# CORS middleware for open deployment
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -42,17 +41,48 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 PUBLIC_DIR = BASE_DIR / "public"
 
 # --- Models ---
-class FinancialProfileInput(BaseModel):
+
+class GoalItem(BaseModel):
+    id: Optional[str] = None
+    title: str = "Emergency Safety Reserve"
+    target_amount: float = 200000.0
+    current_amount: float = 80000.0
+    target_years: float = 2.0
+    expected_roi_pct: float = 6.5
+    category: Optional[str] = "Safety"
+
+class AssetItem(BaseModel):
+    id: Optional[str] = None
+    title: str = "Savings & Liquid Funds"
+    value: float = 120000.0
+    category: str = "Cash / Liquid"
+
+class LiabilityItem(BaseModel):
+    id: Optional[str] = None
+    title: str = "Vehicle / Personal Loan"
+    amount: float = 0.0
+    interest_rate: Optional[float] = 9.5
+    monthly_emi: Optional[float] = 0.0
+
+class UserProfileInput(BaseModel):
     age: int = 28
-    monthly_income: float = 80000.0
-    fixed_expenses: float = 30000.0
+    monthly_income: float = 85000.0
+    mandatory_expenses: float = 35000.0
     discretionary_expenses: float = 18000.0
-    current_savings: float = 120000.0
+    monthly_debt_emi: float = 0.0
+    liquid_savings: float = 150000.0
     has_dependents: bool = False
-    income_stability: str = "stable"  # "stable" | "volatile"
-    risk_profile: str = "moderate"     # "conservative" | "moderate" | "aggressive"
-    monthly_sip: float = 20000.0
-    target_freedom_age: int = 50
+    income_stability: str = "stable"  # "stable" | "variable"
+    risk_profile: str = "moderate"     # "conservative" | "moderate" | "growth"
+    goals: List[GoalItem] = Field(default_factory=list)
+    assets: List[AssetItem] = Field(default_factory=list)
+    liabilities: List[LiabilityItem] = Field(default_factory=list)
+
+class GrowthSimulationRequest(BaseModel):
+    initial_amount: float = 50000.0
+    monthly_contribution: float = 15000.0
+    annual_growth_pct: float = 10.0
+    years: int = 15
 
 class ChatMessage(BaseModel):
     role: str
@@ -75,12 +105,20 @@ class ExpenseAuditRequest(BaseModel):
     expenses: List[ExpenseItem]
     monthly_income: float
 
+class StrategyRequest(BaseModel):
+    profile: UserProfileInput
+
 class TTSRequest(BaseModel):
     text: str
     language_code: str = "en-IN"
     speaker: Optional[str] = None
 
-# --- API Endpoints ---
+class TranscribeJsonRequest(BaseModel):
+    audio_base64: str
+    language_code: str = "unknown"
+    filename: Optional[str] = "recording.webm"
+
+# --- Endpoints ---
 
 @app.get("/api/health")
 def health_check():
@@ -88,65 +126,69 @@ def health_check():
     return {
         "status": "healthy",
         "sarvam_api_configured": bool(key),
-        "app_name": "Sarvam Artha"
+        "app_name": "Sarvam Artha - Personal Finance Manager"
     }
 
 @app.post("/api/profile/calculate")
-def calculate_financial_plan(data: FinancialProfileInput):
-    monthly_savings = max(0.0, data.monthly_income - data.fixed_expenses - data.discretionary_expenses)
-    
-    # 1. Emergency Fund Health
-    emergency_fund = calculate_emergency_fund(
-        monthly_fixed_expenses=data.fixed_expenses,
-        existing_emergency_savings=data.current_savings,
-        has_dependents=data.has_dependents,
-        income_stability=data.income_stability
-    )
-    
-    # 2. 50/30/20 Budgeting Analysis
-    budget_analysis = analyze_budget_rule(
+def calculate_financial_health(data: UserProfileInput):
+    # 1. Cash flow & Runway Analysis
+    cashflow = calculate_cashflow_health(
         monthly_income=data.monthly_income,
-        fixed_needs=data.fixed_expenses,
-        discretionary_wants=data.discretionary_expenses,
-        monthly_savings=monthly_savings
+        mandatory_expenses=data.mandatory_expenses,
+        discretionary_expenses=data.discretionary_expenses,
+        debt_obligations=data.monthly_debt_emi,
+        liquid_savings=data.liquid_savings
     )
-    
-    # 3. Bucket Portfolio Allocation
-    monthly_investible = max(data.monthly_sip, monthly_savings)
-    bucket_plan = calculate_bucket_allocation(
-        age=data.age,
-        risk_profile=data.risk_profile,
-        monthly_investible=monthly_investible
+
+    # 2. Net Worth Calculation
+    net_worth = calculate_net_worth(
+        assets=[a.model_dump() for a in data.assets],
+        liabilities=[l.model_dump() for l in data.liabilities]
     )
-    
-    # 4. SIP Growth Trajectory
-    sip_projections = calculate_sip_projections(
-        monthly_sip=monthly_investible,
-        expected_cagr=12.0,
-        years=25
+
+    # 3. Custom Goals Feasibility
+    goals_eval = evaluate_custom_goals(
+        goals=[g.model_dump() for g in data.goals],
+        available_monthly_surplus=cashflow["net_monthly_surplus"]
     )
-    
-    # 5. Financial Freedom & Living on ROI (FIRE)
-    total_monthly_expense = data.fixed_expenses + data.discretionary_expenses
-    fire_plan = calculate_fire_freedom(
-        current_age=data.age,
-        current_monthly_expense=total_monthly_expense,
-        current_savings=data.current_savings,
-        monthly_sip=monthly_investible,
-        expected_inflation=6.0,
-        expected_post_retire_roi=8.0,
-        target_freedom_age=data.target_freedom_age
-    )
-    
+
     return {
         "profile": data.model_dump(),
-        "calculated_monthly_savings": round(monthly_savings, 2),
-        "emergency_fund": emergency_fund,
-        "budget_analysis": budget_analysis,
-        "bucket_plan": bucket_plan,
-        "sip_projections": sip_projections,
-        "fire_plan": fire_plan
+        "cashflow": cashflow,
+        "net_worth": net_worth,
+        "goals_evaluation": goals_eval
     }
+
+@app.post("/api/profile/simulate-growth")
+def run_growth_simulation(req: GrowthSimulationRequest):
+    return simulate_growth(
+        initial_amount=req.initial_amount,
+        monthly_contribution=req.monthly_contribution,
+        annual_growth_pct=req.annual_growth_pct,
+        years=req.years
+    )
+
+@app.post("/api/advisor/strategy")
+def generate_strategy(req: StrategyRequest):
+    try:
+        profile_dict = req.profile.model_dump()
+        cashflow = calculate_cashflow_health(
+            monthly_income=req.profile.monthly_income,
+            mandatory_expenses=req.profile.mandatory_expenses,
+            discretionary_expenses=req.profile.discretionary_expenses,
+            debt_obligations=req.profile.monthly_debt_emi,
+            liquid_savings=req.profile.liquid_savings
+        )
+        goals = [g.model_dump() for g in req.profile.goals]
+        
+        strategy_analysis = generate_open_ended_strategy(
+            profile=profile_dict,
+            goals=goals,
+            cashflow=cashflow
+        )
+        return {"strategy": strategy_analysis}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/advisor/chat")
 def chat_with_advisor(req: ChatRequest):
@@ -178,6 +220,22 @@ def audit_expenses(req: ExpenseAuditRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/voice/transcribe-json")
+def handle_voice_transcribe_json(req: TranscribeJsonRequest):
+    try:
+        raw_b64 = req.audio_base64
+        if "," in raw_b64:
+            raw_b64 = raw_b64.split(",", 1)[1]
+        audio_bytes = base64.b64decode(raw_b64)
+        result = transcribe_audio(
+            audio_bytes=audio_bytes,
+            filename=req.filename or "recording.webm",
+            language_code=req.language_code
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+
 @app.post("/api/voice/transcribe")
 async def handle_voice_transcribe(
     file: UploadFile = File(...),
@@ -185,7 +243,7 @@ async def handle_voice_transcribe(
 ):
     try:
         audio_bytes = await file.read()
-        filename = file.filename or "recording.wav"
+        filename = file.filename or "recording.webm"
         result = transcribe_audio(audio_bytes=audio_bytes, filename=filename, language_code=language_code)
         return result
     except Exception as e:
@@ -223,4 +281,3 @@ async def serve_js():
 
 if PUBLIC_DIR.exists():
     app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
-

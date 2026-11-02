@@ -1,49 +1,45 @@
 # Sarvam Artha (सर्वम् अर्थ)
-### AI Personal Financial Well-Being & Sovereign Wealth Navigator
+### Open-Ended Personal Finance Manager & AI Strategist
 
 Built with **Sarvam AI** for the Sarvam Buildathon.
 
-Sarvam Artha is a full-featured, fiduciary-grounded personal financial advisory platform designed to help users achieve financial independence, live off investment ROI (FIRE), and build long-term generational wealth while following sound personal finance disciplines.
+Sarvam Artha is an open-ended, general-purpose personal financial manager. It does not mandate or promote any pre-packaged strategy by default. Instead, its recommendations are driven dynamically by the built-in AI reasoning about each individual user's financial profile, obligations, and unique personal goals.
 
 ---
 
 ## 🌟 Key Capabilities & Features
 
-### 1. Fiduciary Financial Health & Emergency Fortress
-- **Emergency Fund Diagnostic**: Tailored emergency runway (3–6 months for salaried, 6–12 months for volatile income or high dependents) kept in liquid instruments.
-- **50/30/20 Budgeting Rule**: Diagnostic breakdown of Needs (fixed expenses), Wants (discretionary spending), and Investments (compounding surplus).
-- **Insurance Hygiene Checklist**: Highlights Term Life and Health cover before taking equity risk.
+### 1. Cash Flow & Overview
+- **Real-Time Cash Flow Diagnostic**: Tracks monthly net income, mandatory living expenses, discretionary spending, and debt obligations/EMIs.
+- **Liquidity & Safety Runway**: Calculates available liquid months of runway without assuming any rigid emergency fund rules.
+- **Visual Cashflow Distribution**: Chart.js visualization of inflow allocation and savings rate.
 
-### 2. 3-Bucket Asset Allocation & Living on ROI (FIRE)
-- **Bucket 1 (Liquid & Safety)**: High-yield savings, sweep FDs, and liquid mutual funds for immediate liquidity.
-- **Bucket 2 (Stability & Sovereign Gold)**: Sovereign Gold Bonds (SGBs / Gold ETFs), PPF, and debt mutual funds for capital preservation and inflation hedging.
-- **Bucket 3 (Long-Term Growth & Equity)**: Broad-market index funds (Nifty 50, Nifty Next 50) and flexi-cap mutual funds to compound wealth.
-- **Living on ROI (FIRE Calculator)**: Computes the exact target corpus needed to sustain life purely on passive ROI/yield (30x annual expenses cushion).
-- **25-Year SIP Compounding Trajectory**: Visualizes compounding curves (Total Invested vs. Future Wealth) using Chart.js.
-- **Curated Educational Portals**: Pointers to *Zerodha Varsity*, *Value Research*, *RBI SGB Portal*, and *SEBI Registered Investment Advisors (RIA)*.
+### 2. Goals & Net Worth Tracker
+- **Custom Goal Architect**: Define and track any personal financial goal (home down payment, skill education, business launch, retirement, sabbatical, debt clearance).
+- **Net Worth Aggregator**: Track customizable assets (Cash, Equities, Fixed Income, Gold/Metals, Real Estate) against liabilities.
+- **Growth & Compounding Simulator**: Neutral compounding calculator with user-defined growth rate and horizon.
 
-### 3. Personal Financial Tracker & AI Expense Doctor
-- **Interactive Local Ledger**: Log income and categorized expenses (Housing, Groceries, Dining Out, Subscriptions, Utilities, Shopping, Healthcare).
-- **Category Spending Pie Chart**: Real-time breakdown of spending habits.
-- **Sarvam AI Expense Doctor**: Audits spending leaks (e.g. food delivery creep, ghost subscriptions), suggests painless cutbacks, and calculates 5-to-10 year compounding gains if redirected to a 12% SIP.
+### 3. Expense Ledger & AI Audit
+- **Interactive Expense Ledger**: Log and categorize daily transactions.
+- **Spending Distribution Chart**: Dynamic category breakdown.
+- **AI Cash Flow Review**: Sarvam AI evaluates outflows from first principles and highlights realistic optimization opportunities.
 
-### 4. Multilingual Voice AI Advisor
-- **Sarvam 105B Chat Completions (`sarvam-105b-conversations`)**: Conversational advisor answering questions about personal finance, taxes, budgeting, portfolio buckets, and all platform services.
-- **Sarvam Saaras STT (`saaras:v4`)**: Multilingual voice recognition. Users can speak in Hindi, English, Bengali, Gujarati, Kannada, Marathi, Punjabi, Tamil, or Telugu.
-- **Sarvam Bulbul TTS (`bulbul:v4-flash`)**: Generates natural spoken audio in Indian accents and languages.
+### 4. Open-Ended AI Strategist & Multilingual Voice
+- **Dynamic First-Principles Strategy**: Sarvam AI (`sarvam-105b-conversations`) analyzes the user's specific age, debts, cash flow, and goals, and dynamically suggests whatever frameworks or plans make sense for that user (e.g., envelope budgeting, debt avalanche/snowball, goal-based asset allocation, bucket diversification, barbell allocation, core-satellite, FIRE/safe withdrawal, or custom hybrids) with explicit reasoning.
+- **Sarvam Saaras STT (`saaras:v4`)**: Multilingual voice recognition with full support for Marathi (मराठी), Hindi (हिंदी), English, Gujarati, Tamil, Telugu, Bengali, etc.
+- **Sarvam Bulbul TTS (`bulbul:v4-flash`)**: Audio voice answers in natural Indian accents and regional languages.
 
 ---
 
 ## 🏗️ Project Architecture
 
 ```
-Sarvam Buildathon/
-├── .env                  # SARVAM_API_KEY
-├── .gitignore            # Keeps .env secure
-├── requirements.txt      # Python dependencies (FastAPI, Uvicorn, Mangum, Sarvam SDK)
+Personal-Finance-Manager/
+├── .env                  # SARVAM_API_KEY (git-ignored)
+├── .gitignore            # Protects credentials
+├── requirements.txt      # Dependencies (FastAPI, Uvicorn, Mangum, Sarvam SDK)
 ├── netlify.toml          # Netlify serverless routing configuration
-├── run.py                # One-click local runner
-├── main.py               # Minimal SDK verification script
+├── run.py                # 1-click local development launcher
 ├── netlify/
 │   └── functions/
 │       └── api.py        # Netlify serverless function entrypoint (Mangum)
@@ -51,10 +47,10 @@ Sarvam Buildathon/
 │   ├── index.py          # FastAPI application & REST endpoints
 │   └── services/
 │       ├── __init__.py
-│       ├── sarvam_service.py  # Sarvam Chat, STT (Saaras), and TTS (Bulbul) integration
-│       └── finance_calc.py    # Deterministic financial math (FIRE, SIP, 50/30/20, Buckets)
+│       ├── sarvam_service.py  # Sarvam 105B Chat, Saaras STT & Bulbul TTS
+│       └── finance_calc.py    # General-purpose math engine (Cashflow, Net Worth, Goals)
 └── public/
-    ├── index.html        # Responsive Single Page Application (Tailwind + Chart.js)
+    ├── index.html        # Responsive Single Page Application
     └── app.js            # Reactive state, charts, voice recording & playback
 ```
 
@@ -62,7 +58,7 @@ Sarvam Buildathon/
 
 ## 🚀 Running Locally
 
-1. Ensure dependencies are installed:
+1. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
@@ -70,7 +66,7 @@ Sarvam Buildathon/
    ```bash
    python run.py
    ```
-3. Open your browser at:
+3. Open:
    ```
    http://127.0.0.1:8000
    ```
@@ -79,21 +75,11 @@ Sarvam Buildathon/
 
 ## 🌐 Deploying to Netlify
 
-The codebase is pre-configured for Netlify with `netlify.toml` and serverless Python functions in `netlify/functions/`:
-
-1. **Push to GitHub**:
+1. Push to GitHub:
    ```bash
-   git add .
-   git commit -m "feat: configure for Netlify deployment"
    git push origin main
    ```
-2. **Import to Netlify**:
-   - Go to [app.netlify.com](https://app.netlify.com).
-   - Click **Add new site > Import an existing project**.
-   - Select your GitHub repository (`Personal-Finance-Manager`).
-3. **Set Environment Variable**:
-   - Under **Site configuration > Environment variables**, add:
-     - Variable: `SARVAM_API_KEY`
-     - Value: `your_sarvam_api_key`
-4. **Deploy**:
-   - Click **Deploy site**. Netlify will automatically build the static frontend and deploy the serverless Python functions!
+2. In Netlify ([app.netlify.com](https://app.netlify.com)), import `Personal-Finance-Manager`.
+3. Add Environment Variable:
+   - `SARVAM_API_KEY` = *your Sarvam key*
+4. Deploy!

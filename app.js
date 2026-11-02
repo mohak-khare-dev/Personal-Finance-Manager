@@ -714,7 +714,7 @@ function appendChatMessage(role, content, audioBase64 = null) {
   container.scrollTop = container.scrollHeight;
 }
 
-async function handleSendMessage() {
+async function handleSendMessage(isVoiceInput = false, detectedLang = 'en-IN') {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
@@ -723,8 +723,6 @@ async function handleSendMessage() {
   appendChatMessage('user', text);
   chatHistory.push({ role: 'user', content: text });
 
-  const autoVoice = document.getElementById('chk-auto-voice')?.checked || false;
-  const voiceLang = document.getElementById('sel-language')?.value || 'mr-IN';
   const profile = getProfileData();
 
   const loadingDiv = document.createElement('div');
@@ -741,8 +739,8 @@ async function handleSendMessage() {
       body: JSON.stringify({
         messages: chatHistory,
         context: JSON.stringify(profile),
-        enable_voice: autoVoice,
-        voice_language: voiceLang
+        enable_voice: isVoiceInput, // Only request TTS if voice input was used
+        voice_language: detectedLang
       })
     });
 
@@ -756,11 +754,12 @@ async function handleSendMessage() {
 
     const data = await res.json();
     if (data.reply) {
-      appendChatMessage('assistant', data.reply, data.audio_base64);
+      appendChatMessage('assistant', data.reply, data.audio_base64, data.language_code || detectedLang);
       chatHistory.push({ role: 'assistant', content: data.reply });
 
-      if (autoVoice && data.audio_base64) {
-        playTTSAudio(data.audio_base64);
+      // Automatically play audio ONLY if the user used voice input
+      if (isVoiceInput && data.audio_base64) {
+        playTTSAudio(data.audio_base64, data.language_code || detectedLang);
       }
     } else {
       appendChatMessage('assistant', 'Sorry, could not generate a response.');
@@ -774,10 +773,11 @@ async function handleSendMessage() {
 function sendQuickPrompt(promptText) {
   switchTab('tab-advisor');
   document.getElementById('chat-input').value = promptText;
-  handleSendMessage();
+  handleSendMessage(false);
 }
 
 function clearChat() {
+  stopAudio();
   chatHistory = [];
   const container = document.getElementById('chat-messages');
   container.innerHTML = `
@@ -844,19 +844,18 @@ function stopVoiceRecording() {
 
 async function sendAudioToSTT(audioBlob) {
   const input = document.getElementById('chat-input');
-  input.placeholder = "Transcribing speech...";
-
-  const langCode = document.getElementById('sel-language')?.value || 'mr-IN';
+  input.placeholder = "Transcribing speech and detecting language...";
 
   try {
     const base64Audio = await blobToBase64(audioBlob);
 
+    // Language code is 'unknown' so Sarvam Saaras automatically detects the spoken language
     const res = await fetch(getApiUrl('/api/voice/transcribe-json'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         audio_base64: base64Audio,
-        language_code: langCode,
+        language_code: 'unknown',
         filename: 'speech.webm'
       })
     });
@@ -882,7 +881,9 @@ async function sendAudioToSTT(audioBlob) {
     if (data.transcript && data.transcript.trim()) {
       input.value = data.transcript;
       input.placeholder = "Ask anything about financial planning...";
-      handleSendMessage();
+      const detectedLang = data.language_code || 'unknown';
+      // Automatically send message with voice input flag set to TRUE and detected language passed
+      handleSendMessage(true, detectedLang);
     } else {
       input.placeholder = "No speech detected. Please speak clearly and try again.";
       setTimeout(() => {
@@ -911,14 +912,83 @@ function parseResponseError(statusCode, responseText) {
   return `Error (${statusCode}): ${responseText.substring(0, 200)}`;
 }
 
-function playTTSAudio(base64Data) {
+// --- Audio Player Controller (Play / Pause / Stop) ---
+
+function playTTSAudio(base64Data, langCode = 'Auto') {
   try {
     const audioPlayer = document.getElementById('tts-audio-player');
     audioPlayer.src = `data:audio/wav;base64,${base64Data}`;
     audioPlayer.play().catch(e => console.warn("Audio playback error:", e));
+
+    const panel = document.getElementById('audio-control-panel');
+    if (panel) panel.classList.remove('hidden');
+
+    const langNames = {
+      'mr-IN': 'Marathi (मराठी)',
+      'bn-IN': 'Bengali (বাংলা)',
+      'hi-IN': 'Hindi (हिंदी)',
+      'en-IN': 'English',
+      'gu-IN': 'Gujarati (ગુજરાતી)',
+      'ta-IN': 'Tamil (தமிழ்)',
+      'te-IN': 'Telugu (తెలుగు)',
+      'kn-IN': 'Kannada (ಕನ್ನಡ)',
+      'pa-IN': 'Punjabi (ਪੰਜਾਬੀ)'
+    };
+
+    const badge = document.getElementById('audio-detected-lang-badge');
+    if (badge) badge.textContent = langNames[langCode] || langCode || 'Auto';
+
+    const statusText = document.getElementById('audio-playback-status');
+    if (statusText) statusText.textContent = 'Playing spoken reply...';
+
+    const pauseIcon = document.getElementById('btn-pause-icon');
+    const pauseLabel = document.getElementById('btn-pause-label');
+    if (pauseIcon) pauseIcon.className = 'ph ph-pause';
+    if (pauseLabel) pauseLabel.textContent = 'Pause';
+
+    const pulse = document.getElementById('audio-pulse-indicator');
+    if (pulse) pulse.classList.remove('hidden');
+
+    audioPlayer.onended = () => {
+      if (panel) panel.classList.add('hidden');
+    };
+
+    audioPlayer.onpause = () => {
+      if (pauseIcon) pauseIcon.className = 'ph ph-play';
+      if (pauseLabel) pauseLabel.textContent = 'Resume';
+      if (statusText) statusText.textContent = 'Audio paused';
+      if (pulse) pulse.classList.add('hidden');
+    };
+
+    audioPlayer.onplay = () => {
+      if (pauseIcon) pauseIcon.className = 'ph ph-pause';
+      if (pauseLabel) pauseLabel.textContent = 'Pause';
+      if (statusText) statusText.textContent = 'Playing spoken reply...';
+      if (pulse) pulse.classList.remove('hidden');
+    };
   } catch (e) {
     console.error("Playback failed:", e);
   }
+}
+
+function togglePauseAudio() {
+  const audioPlayer = document.getElementById('tts-audio-player');
+  if (!audioPlayer) return;
+
+  if (audioPlayer.paused) {
+    audioPlayer.play().catch(e => console.warn("Audio resume error:", e));
+  } else {
+    audioPlayer.pause();
+  }
+}
+
+function stopAudio() {
+  const audioPlayer = document.getElementById('tts-audio-player');
+  if (!audioPlayer) return;
+  audioPlayer.pause();
+  audioPlayer.currentTime = 0;
+  const panel = document.getElementById('audio-control-panel');
+  if (panel) panel.classList.add('hidden');
 }
 
 // --- Formatting Helpers ---

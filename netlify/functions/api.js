@@ -156,7 +156,13 @@ Instructions:
 
       const systemMsg = {
         role: "system",
-        content: `You are an intelligent, objective personal finance advisor. Understand and respond naturally in Marathi (मराठी), Hindi, or English as appropriate to the user's inquiry. Give clear, reasoned advice.${context}`
+        content: `You are an intelligent, objective personal finance advisor. 
+IMPORTANT LANGUAGE RULE: You MUST always detect and reply in the EXACT language the user writes or speaks in. 
+- If the user asks in Marathi (मराठी), you MUST respond completely and naturally in Marathi.
+- If the user asks in Bengali (বাংলা), you MUST respond completely and naturally in Bengali.
+- If the user asks in Hindi (हिंदी), respond in Hindi.
+- If the user asks in Gujarati, Tamil, Telugu, Kannada, Punjabi, Malayalam, Odia, or English, respond in that corresponding language.
+Provide clear, reasoned advice.${context}`
       };
 
       const sarvamRes = await fetch(`${SARVAM_BASE_URL}/v1/chat/completions`, {
@@ -176,8 +182,23 @@ Instructions:
       const replyText = sData.choices?.[0]?.message?.content || "I could not process the request.";
 
       let audioBase64 = null;
+      // Only synthesize audio if the user used voice input
       if (body.enable_voice && replyText) {
         try {
+          const speakerMap = {
+            "mr-IN": "ishita_mr_conversational",
+            "bn-IN": "roopa_bn_conversational",
+            "hi-IN": "kavya_hi_conversational",
+            "en-IN": "aditi_en_stories",
+            "gu-IN": "pooja_gu_conversational",
+            "kn-IN": "chaitra_kn_conversation",
+            "pa-IN": "anand_pa_conversation",
+            "ta-IN": "gokul_ta_narration",
+            "te-IN": "kavitha_te_conversation"
+          };
+          const lang = body.voice_language || "en-IN";
+          const chosenSpeaker = speakerMap[lang] || "aditi_en_stories";
+
           const ttsRes = await fetch(`${SARVAM_BASE_URL}/text-to-speech`, {
             method: "POST",
             headers: {
@@ -186,8 +207,8 @@ Instructions:
             },
             body: JSON.stringify({
               text: replyText.substring(0, 500),
-              language_code: body.voice_language || "en-IN",
-              speaker: "aditi_en_stories",
+              language_code: speakerMap[lang] ? lang : "en-IN",
+              speaker: chosenSpeaker,
               model: "bulbul:v4-flash"
             })
           });

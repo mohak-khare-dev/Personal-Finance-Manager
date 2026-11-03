@@ -1,4 +1,7 @@
 import os
+import re
+import io
+import wave
 import base64
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -199,6 +202,82 @@ def transcribe_audio(audio_bytes: bytes, filename: str = "recording.wav", langua
         "language_code": getattr(response, "language_code", code) or code
     }
 
+def clean_text_for_speech(text: str) -> str:
+    """Strip markdown formatting, bullets, headers, and excessive spaces for natural speech."""
+    if not text:
+        return ""
+    text = re.sub(r'#+\s*', '', text)
+    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
+    text = re.sub(r'\*([^*]+)\*', r'\1', text)
+    text = re.sub(r'`([^`]+)`', r'\1', text)
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    text = re.sub(r'^\s*[-*•]\s*', '', text, flags=re.MULTILINE)
+    text = re.sub(r'\n+', ' ', text)
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
+
+def chunk_text_for_speech(text: str, max_chars: int = 2200) -> List[str]:
+    """Split text into sentence-aware chunks that fit within Sarvam Bulbul's 2500 character limit."""
+    clean = clean_text_for_speech(text)
+    if not clean:
+        return []
+    if len(clean) <= max_chars:
+        return [clean]
+
+    sentences = re.split(r'(?<=[.?!।॥\n])\s+', clean)
+    chunks = []
+    current = ""
+    for s in sentences:
+        if not s.strip():
+            continue
+        if len(current) + len(s) + 1 <= max_chars:
+            current = f"{current} {s}".strip() if current else s
+        else:
+            if current:
+                chunks.append(current)
+            if len(s) > max_chars:
+                for i in range(0, len(s), max_chars):
+                    chunks.append(s[i:i+max_chars])
+                current = ""
+            else:
+                current = s
+    if current:
+        chunks.append(current)
+    return chunks
+
+def concatenate_wav_audios(b64_audios: List[str]) -> Optional[str]:
+    """Concatenate multiple Base64-encoded WAV clips into a single continuous Base64 WAV."""
+    if not b64_audios:
+        return None
+    if len(b64_audios) == 1:
+        return b64_audios[0]
+
+    try:
+        raw_audios = [base64.b64decode(b) for b in b64_audios if b]
+        if not raw_audios:
+            return None
+        if len(raw_audios) == 1:
+            return base64.b64encode(raw_audios[0]).decode('utf-8')
+
+        out_io = io.BytesIO()
+        first_wav = wave.open(io.BytesIO(raw_audios[0]), 'rb')
+        params = first_wav.getparams()
+        out_wav = wave.open(out_io, 'wb')
+        out_wav.setparams(params)
+        out_wav.writeframes(first_wav.readframes(first_wav.getnframes()))
+        first_wav.close()
+
+        for raw in raw_audios[1:]:
+            w = wave.open(io.BytesIO(raw), 'rb')
+            out_wav.writeframes(w.readframes(w.getnframes()))
+            w.close()
+
+        out_wav.close()
+        return base64.b64encode(out_io.getvalue()).decode('utf-8')
+    except Exception as e:
+        print(f"Error concatenating WAV audio: {e}")
+        return b64_audios[0]
+
 def synthesize_speech(text: str, language_code: str = "en-IN", speaker: Optional[str] = None) -> Optional[str]:
     client = get_sarvam_client()
     
@@ -215,20 +294,22 @@ def synthesize_speech(text: str, language_code: str = "en-IN", speaker: Optional
     }
     
     chosen_speaker = speaker or speaker_map.get(language_code, "aditi_en_stories")
-    clean_text = text[:800].strip()
-    if not clean_text:
+    chunks = chunk_text_for_speech(text, max_chars=2200)
+    if not chunks:
         return None
-        
-    try:
-        response = client.text_to_speech.convert(
-            text=clean_text,
-            language_code=language_code if language_code in speaker_map else "en-IN",
-            speaker=chosen_speaker,
-            model="bulbul:v4-flash"
-        )
-        if response.audios and len(response.audios) > 0:
-            return response.audios[0]
-    except Exception as e:
-        print(f"TTS conversion warning: {e}")
-        return None
-    return None
+
+    audio_chunks = []
+    for c in chunks:
+        try:
+            response = client.text_to_speech.convert(
+                text=c,
+                language_code=language_code if language_code in speaker_map else "en-IN",
+                speaker=chosen_speaker,
+                model="bulbul:v4-flash"
+            )
+            if response.audios and len(response.audios) > 0:
+                audio_chunks.append(response.audios[0])
+        except Exception as e:
+            print(f"TTS conversion warning on chunk: {e}")
+
+    return concatenate_wav_audios(audio_chunks)

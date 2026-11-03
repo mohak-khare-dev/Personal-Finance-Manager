@@ -105,27 +105,40 @@ def evaluate_custom_goals(
     available_monthly_surplus: float
 ) -> Dict[str, Any]:
     processed_goals = []
-    total_required_monthly = 0.0
+    total_baseline_monthly = 0.0
+    total_invested_monthly = 0.0
 
     for g in goals:
         title = g.get("title", "Goal")
         target_amount = float(g.get("target_amount", 0.0))
         current_amount = float(g.get("current_amount", 0.0))
-        target_years = max(0.5, float(g.get("target_years", 3.0)))
-        expected_roi = float(g.get("expected_roi_pct", 7.0)) / 100.0
-
+        target_years = max(0.25, float(g.get("target_years", 1.0)))
         shortfall = max(0.0, target_amount - current_amount)
-        months = target_years * 12.0
-        monthly_rate = expected_roi / 12.0
+        months = max(1.0, target_years * 12.0)
 
-        if shortfall <= 0:
-            required_monthly = 0.0
-        elif monthly_rate > 0:
-            required_monthly = (shortfall * monthly_rate) / (((1 + monthly_rate) ** months - 1) * (1 + monthly_rate))
+        # 1. Baseline honest monthly saving needed (without any investment risk/assumptions)
+        baseline_monthly = shortfall / months
+
+        # 2. Smart passive income / investment acceleration based on time horizon
+        if target_years <= 2.0:
+            passive_roi = 0.07  # 7% liquid / arbitrage / short-term debt
+            horizon_advice = "Short-term horizon: park in liquid funds or short-term debt (~7% return) for capital preservation while earning passive interest."
+        elif target_years <= 5.0:
+            passive_roi = 0.09  # 9% balanced hybrid
+            horizon_advice = "Medium-term horizon: balanced hybrid funds (~9% return) let passive compounding lower your monthly cash requirement safely."
         else:
-            required_monthly = shortfall / months
+            passive_roi = 0.12  # 12% broad market equity index
+            horizon_advice = "Long-term horizon: diversified index funds (~12% CAGR) allow passive compounding to cover a major portion of your target."
 
-        total_required_monthly += required_monthly
+        monthly_rate = passive_roi / 12.0
+        if shortfall > 0 and monthly_rate > 0:
+            invested_monthly = (shortfall * monthly_rate) / (((1 + monthly_rate) ** months - 1) * (1 + monthly_rate))
+        else:
+            invested_monthly = baseline_monthly
+
+        monthly_savings_saved = max(0.0, baseline_monthly - invested_monthly)
+        total_baseline_monthly += baseline_monthly
+        total_invested_monthly += invested_monthly
         progress_pct = min(100.0, (current_amount / target_amount * 100.0)) if target_amount > 0 else 0.0
 
         processed_goals.append({
@@ -136,15 +149,19 @@ def evaluate_custom_goals(
             "current_amount": round(current_amount, 2),
             "target_years": target_years,
             "progress_pct": round(progress_pct, 1),
-            "required_monthly_savings": round(required_monthly, 2)
+            "baseline_monthly_savings": round(baseline_monthly, 2),
+            "invested_monthly_savings": round(invested_monthly, 2),
+            "monthly_savings_saved": round(monthly_savings_saved, 2),
+            "passive_investment_advice": horizon_advice
         })
 
-    surplus_coverage = (available_monthly_surplus / total_required_monthly * 100.0) if total_required_monthly > 0 else 100.0
+    surplus_coverage = (available_monthly_surplus / total_baseline_monthly * 100.0) if total_baseline_monthly > 0 else 100.0
 
     return {
         "goals": processed_goals,
-        "total_required_monthly": round(total_required_monthly, 2),
+        "total_required_monthly": round(total_baseline_monthly, 2),
+        "total_invested_monthly": round(total_invested_monthly, 2),
         "available_monthly_surplus": round(available_monthly_surplus, 2),
         "surplus_coverage_pct": round(surplus_coverage, 1),
-        "is_fully_funded": available_monthly_surplus >= total_required_monthly
+        "is_fully_funded": available_monthly_surplus >= total_baseline_monthly
     }

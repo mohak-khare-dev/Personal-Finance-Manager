@@ -3,6 +3,116 @@
 
 const SARVAM_BASE_URL = "https://api.sarvam.ai";
 
+function cleanTextForSpeech(text) {
+  if (!text) return "";
+  return text
+    .replace(/#+\s*/g, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/^\s*[-*•]\s*/gm, "")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function chunkTextForSpeech(text, maxChars = 2200) {
+  const clean = cleanTextForSpeech(text);
+  if (!clean) return [];
+  if (clean.length <= maxChars) return [clean];
+
+  const sentences = clean.split(/(?<=[.?!।॥\n])\s+/);
+  const chunks = [];
+  let current = "";
+
+  for (const s of sentences) {
+    if (!s.trim()) continue;
+    if ((current.length + s.length + 1) <= maxChars) {
+      current = current ? `${current} ${s}` : s;
+    } else {
+      if (current) chunks.push(current);
+      if (s.length > maxChars) {
+        for (let i = 0; i < s.length; i += maxChars) {
+          chunks.push(s.substring(i, i + maxChars));
+        }
+        current = "";
+      } else {
+        current = s;
+      }
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+function concatenateWavBase64(b64List) {
+  if (!b64List || b64List.length === 0) return null;
+  if (b64List.length === 1) return b64List[0];
+
+  try {
+    const buffers = b64List.map(b => Buffer.from(b, 'base64'));
+    const first = buffers[0];
+    const dataMarker = Buffer.from('data');
+    const firstDataIdx = first.indexOf(dataMarker);
+    if (firstDataIdx === -1) return b64List[0];
+
+    const pcmChunks = [];
+    for (const buf of buffers) {
+      const idx = buf.indexOf(dataMarker);
+      if (idx !== -1 && buf.length >= idx + 8) {
+        const size = buf.readUInt32LE(idx + 4);
+        const pcm = buf.slice(idx + 8, idx + 8 + size);
+        pcmChunks.push(pcm);
+      }
+    }
+
+    const totalPcm = Buffer.concat(pcmChunks);
+    const header = Buffer.from(first.slice(0, firstDataIdx + 8));
+
+    header.writeUInt32LE(totalPcm.length, firstDataIdx + 4);
+    const riffSize = (header.length + totalPcm.length) - 8;
+    header.writeUInt32LE(riffSize, 4);
+
+    return Buffer.concat([header, totalPcm]).toString('base64');
+  } catch (err) {
+    console.warn("WAV concat error:", err);
+    return b64List[0];
+  }
+}
+
+async function synthesizeFullAudio(text, langCode, speaker, apiKey) {
+  const chunks = chunkTextForSpeech(text, 2200);
+  if (!chunks || chunks.length === 0) return null;
+
+  const audioResults = [];
+  for (const c of chunks) {
+    try {
+      const ttsRes = await fetch(`${SARVAM_BASE_URL}/text-to-speech`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-subscription-key": apiKey
+        },
+        body: JSON.stringify({
+          text: c,
+          language_code: langCode,
+          speaker: speaker,
+          model: "bulbul:v4-flash"
+        })
+      });
+      const ttsData = await ttsRes.json();
+      if (ttsData.audios && ttsData.audios.length > 0) {
+        audioResults.push(ttsData.audios[0]);
+      }
+    } catch (e) {
+      console.warn("TTS chunk warning:", e);
+    }
+  }
+
+  return concatenateWavBase64(audioResults);
+}
+
 exports.handler = async (event, context) => {
   const path = event.path.replace(/\/\.netlify\/functions\/api/, "").replace(/^\/api/, "");
   const method = event.httpMethod;
@@ -64,6 +174,42 @@ exports.handler = async (event, context) => {
       const totalAssets = assetsList.reduce((acc, a) => acc + (Number(a.value) || 0), 0);
       const totalLiab = liabList.reduce((acc, l) => acc + (Number(l.amount) || 0), 0);
 
+      const goalsList = body.goals || [];
+      let totalBaselineMonthly = 0;
+      let totalInvestedMonthly = 0;
+      const evaluatedGoals = goalsList.map(g => {
+        const target = Number(g.target_amount) || 0;
+        const current = Number(g.current_amount) || 0;
+        const years = Math.max(0.25, Number(g.target_years) || 1);
+        const shortfall = Math.max(0, target - current);
+        const months = Math.max(1, years * 12);
+        const baselineMonthly = shortfall / months;
+
+        let passiveRoi = 0.07;
+        if (years > 5) passiveRoi = 0.12;
+        else if (years > 2) passiveRoi = 0.09;
+
+        const monthlyRate = passiveRoi / 12;
+        let investedMonthly = baselineMonthly;
+        if (shortfall > 0 && monthlyRate > 0) {
+          investedMonthly = (shortfall * monthlyRate) / (((1 + monthlyRate) ** months - 1) * (1 + monthlyRate));
+        }
+
+        totalBaselineMonthly += baselineMonthly;
+        totalInvestedMonthly += investedMonthly;
+
+        return {
+          id: g.id,
+          title: g.title,
+          target_amount: target,
+          current_amount: current,
+          target_years: years,
+          baseline_monthly_savings: Math.round(baselineMonthly * 100) / 100,
+          invested_monthly_savings: Math.round(investedMonthly * 100) / 100,
+          monthly_savings_saved: Math.round(Math.max(0, baselineMonthly - investedMonthly) * 100) / 100
+        };
+      });
+
       return {
         statusCode: 200,
         headers,
@@ -87,7 +233,11 @@ exports.handler = async (event, context) => {
             asset_breakdown: {}
           },
           goals_evaluation: {
-            total_required_monthly: 0
+            goals: evaluatedGoals,
+            total_required_monthly: Math.round(totalBaselineMonthly * 100) / 100,
+            total_invested_monthly: Math.round(totalInvestedMonthly * 100) / 100,
+            available_monthly_surplus: Math.round(surplus * 100) / 100,
+            is_fully_funded: surplus >= totalBaselineMonthly
           }
         })
       };
@@ -220,24 +370,10 @@ Core Operating Principles:
           };
           const lang = body.voice_language || "en-IN";
           const chosenSpeaker = speakerMap[lang] || "aditi_en_stories";
+          const finalLang = speakerMap[lang] ? lang : "en-IN";
 
-          const ttsRes = await fetch(`${SARVAM_BASE_URL}/text-to-speech`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "api-subscription-key": apiKey
-            },
-            body: JSON.stringify({
-              text: replyText.substring(0, 500),
-              language_code: speakerMap[lang] ? lang : "en-IN",
-              speaker: chosenSpeaker,
-              model: "bulbul:v4-flash"
-            })
-          });
-          const ttsData = await ttsRes.json();
-          if (ttsData.audios && ttsData.audios.length > 0) {
-            audioBase64 = ttsData.audios[0];
-          }
+          // Synthesize full audio without 500-char cutoff
+          audioBase64 = await synthesizeFullAudio(replyText, finalLang, chosenSpeaker, apiKey);
         } catch (e) {
           console.warn("TTS warning:", e);
         }
@@ -330,25 +466,17 @@ Evaluate spending patterns and suggest practical, realistic optimization ideas.`
 
     // 7. Voice Synthesize
     if (path === "/voice/synthesize" || path === "/voice/synthesize/") {
-      const ttsRes = await fetch(`${SARVAM_BASE_URL}/text-to-speech`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "api-subscription-key": apiKey
-        },
-        body: JSON.stringify({
-          text: (body.text || "").substring(0, 500),
-          language_code: body.language_code || "en-IN",
-          speaker: body.speaker || "aditi_en_stories",
-          model: "bulbul:v4-flash"
-        })
-      });
-      const ttsData = await ttsRes.json();
+      const fullAudio = await synthesizeFullAudio(
+        body.text || "",
+        body.language_code || "en-IN",
+        body.speaker || "aditi_en_stories",
+        apiKey
+      );
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
-          audio_base64: ttsData.audios?.[0] || null,
+          audio_base64: fullAudio,
           language_code: body.language_code || "en-IN"
         })
       };

@@ -142,22 +142,30 @@ function buildFullFinancialContext() {
   const goalsSummary = goals.map(g => {
     const target = parseFloat(g.target_amount) || 0;
     const current = parseFloat(g.current_amount) || 0;
-    const years = parseFloat(g.target_years) || 1;
-    const roi = parseFloat(g.expected_roi_pct) || 6.0;
+    const years = Math.max(0.25, parseFloat(g.target_years) || 1);
     const shortfall = Math.max(0, target - current);
-    const months = years * 12;
-    const r = (roi / 100) / 12;
-    let reqMonthly = 0;
-    if (shortfall > 0) {
-      if (r > 0) {
-        reqMonthly = (shortfall * r) / (((1 + r) ** months - 1) * (1 + r));
-      } else {
-        reqMonthly = shortfall / months;
-      }
+    const months = Math.max(1, Math.round(years * 12));
+    const baselineMonthly = shortfall / months;
+    totalGoalMonthlyNeeded += baselineMonthly;
+
+    let passiveRoi = 7.0;
+    let strategyNote = "liquid/arbitrage funds (~7% passive yield)";
+    if (years > 5) {
+      passiveRoi = 12.0;
+      strategyNote = "broad-market index funds (~12% passive compounding)";
+    } else if (years > 2) {
+      passiveRoi = 9.0;
+      strategyNote = "balanced hybrid funds (~9% passive return)";
     }
-    totalGoalMonthlyNeeded += reqMonthly;
+
+    const r = (passiveRoi / 100) / 12;
+    let investedMonthly = baselineMonthly;
+    if (shortfall > 0 && r > 0) {
+      investedMonthly = (shortfall * r) / (((1 + r) ** months - 1) * (1 + r));
+    }
+    const savedMonthly = Math.max(0, baselineMonthly - investedMonthly);
     const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
-    return `- Goal "${g.title}": Target ₹${formatCurrency(target)} in ${years} yrs | Current Saved: ₹${formatCurrency(current)} (${pct}%) | Required Monthly SIP: ₹${formatCurrency(reqMonthly)}`;
+    return `- Goal "${g.title}": Target ₹${formatCurrency(target)} in ${years} yrs | Current Saved: ₹${formatCurrency(current)} (${pct}%) | Baseline Monthly Saving: ₹${formatCurrency(baselineMonthly)}/mo | With Passive Compounding: ~₹${formatCurrency(investedMonthly)}/mo (Saves ~₹${formatCurrency(savedMonthly)}/mo via ${strategyNote})`;
   }).join('\n');
 
   // Website Goal Feasibility Analysis
@@ -590,41 +598,82 @@ function renderGoalsList() {
 
   goals.forEach(g => {
     const shortfall = Math.max(0, g.target_amount - g.current_amount);
-    const months = (g.target_years || 1) * 12;
-    const r = ((g.expected_roi_pct || 6) / 100) / 12;
-    let reqMonthly = 0;
-    if (shortfall > 0) {
-      if (r > 0) {
-        reqMonthly = (shortfall * r) / (((1 + r) ** months - 1) * (1 + r));
-      } else {
-        reqMonthly = shortfall / months;
-      }
-    }
+    const years = Math.max(0.25, parseFloat(g.target_years) || 1);
+    const months = Math.max(1, Math.round(years * 12));
+    const reqMonthly = shortfall / months;
     totalNeeded += reqMonthly;
 
+    // Smart passive income & investment acceleration based on timeline
+    let passiveRoi = 7.0;
+    let assetClass = "Liquid & Short-Term Debt Funds (~7% return)";
+    let adviceText = "Capital preservation priority: Putting monthly savings in liquid or arbitrage funds generates safe passive returns while keeping funds 100% accessible.";
+    if (years > 5) {
+      passiveRoi = 12.0;
+      assetClass = "Diversified Broad-Market Index Funds (~12% return)";
+      adviceText = "Long-term compounding: Investing monthly in broad-market index funds allows compounding passive gains to cover a major chunk of your goal.";
+    } else if (years > 2) {
+      passiveRoi = 9.0;
+      assetClass = "Balanced Hybrid Funds (~9% return)";
+      adviceText = "Medium-term growth: Balanced hybrid funds provide growth with moderate risk, reducing the cash you need to save from your pocket.";
+    }
+
+    const r = (passiveRoi / 100) / 12;
+    let investedMonthly = reqMonthly;
+    if (shortfall > 0 && r > 0) {
+      investedMonthly = (shortfall * r) / (((1 + r) ** months - 1) * (1 + r));
+    }
+    const monthlySaved = Math.max(0, reqMonthly - investedMonthly);
     const pct = g.target_amount > 0 ? Math.min(100, Math.round((g.current_amount / g.target_amount) * 100)) : 0;
 
     const card = document.createElement('div');
-    card.className = 'p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2';
+    card.className = 'p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3';
     card.innerHTML = `
       <div class="flex items-center justify-between">
         <div>
-          <span class="font-bold text-white text-xs">${escapeHtml(g.title)}</span>
-          <span class="text-[10px] text-slate-400 ml-2">(${g.target_years} Yrs Timeline)</span>
+          <span class="font-bold text-white text-xs sm:text-sm">${escapeHtml(g.title)}</span>
+          <span class="text-[11px] text-slate-400 ml-2">(${years} Yrs Timeline)</span>
         </div>
-        <div class="flex items-center space-x-2">
-          <span class="text-xs font-bold text-emerald-400">₹${formatCurrency(reqMonthly)}/mo</span>
-          <button onclick="deleteGoal('${g.id}')" class="text-slate-500 hover:text-red-400 transition" title="Delete">
+        <div class="flex items-center space-x-1.5">
+          <button onclick="editGoal('${g.id}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs transition flex items-center space-x-1" title="Edit Goal">
+            <i class="ph ph-pencil-simple"></i>
+            <span>Edit</span>
+          </button>
+          <button onclick="deleteGoal('${g.id}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 text-xs transition flex items-center space-x-1" title="Delete">
             <i class="ph ph-trash"></i>
           </button>
         </div>
       </div>
-      <div class="flex justify-between text-[11px] text-slate-400">
-        <span>Saved: ₹${formatCurrency(g.current_amount)}</span>
-        <span>Target: ₹${formatCurrency(g.target_amount)}</span>
+
+      <div class="space-y-1.5">
+        <div class="flex justify-between text-xs">
+          <span class="text-slate-400">Monthly Saving Needed:</span>
+          <span class="font-bold text-white text-sm">₹${formatCurrency(reqMonthly)}/mo</span>
+        </div>
+        <div class="flex justify-between text-[11px] text-slate-400">
+          <span>Saved: ₹${formatCurrency(g.current_amount)}</span>
+          <span>Target: ₹${formatCurrency(g.target_amount)} (${pct}% achieved)</span>
+        </div>
+        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+          <div class="bg-brand-500 h-full rounded-full transition-all" style="width: ${pct}%"></div>
+        </div>
       </div>
-      <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-        <div class="bg-brand-500 h-full rounded-full" style="width: ${pct}%"></div>
+
+      <!-- Investment & Passive Income Advice -->
+      <div class="p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/20 space-y-1.5 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="font-semibold text-emerald-400 flex items-center space-x-1">
+            <i class="ph ph-trend-up"></i>
+            <span>Achieve Quicker with Passive Growth:</span>
+          </span>
+          <span class="font-extrabold text-white text-xs">~₹${formatCurrency(investedMonthly)}/mo</span>
+        </div>
+        <p class="text-[11px] text-slate-300 leading-relaxed">
+          ${adviceText} <span class="text-emerald-400 font-medium">(Saves ~₹${formatCurrency(monthlySaved)}/mo in cash outlay via ${assetClass})</span>
+        </p>
+        <button onclick="askAiAboutGoal('${escapeHtml(g.id)}')" class="mt-1 w-full py-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 text-xs font-semibold flex items-center justify-center space-x-1.5 border border-brand-500/30 transition">
+          <i class="ph ph-sparkle"></i>
+          <span>Ask AI: How to reach this goal faster with investments?</span>
+        </button>
       </div>
     `;
     container.appendChild(card);
@@ -634,24 +683,81 @@ function renderGoalsList() {
   if (totalEl) totalEl.textContent = `₹${formatCurrency(totalNeeded)}/mo`;
 }
 
+function openAddGoalModal() {
+  const idEl = document.getElementById('modal-goal-id');
+  if (idEl) idEl.value = '';
+  document.getElementById('modal-goal-title').value = '';
+  document.getElementById('modal-goal-target').value = '';
+  document.getElementById('modal-goal-current').value = '';
+  document.getElementById('modal-goal-years').value = '2';
+
+  const heading = document.getElementById('modal-goal-title-text');
+  if (heading) heading.textContent = 'Add Financial Goal';
+
+  const submitText = document.getElementById('modal-goal-submit-text');
+  if (submitText) submitText.textContent = 'Save Goal';
+
+  document.getElementById('modal-add-goal').classList.remove('hidden');
+}
+
+function editGoal(id) {
+  const g = goals.find(item => item.id === id);
+  if (!g) return;
+
+  const idEl = document.getElementById('modal-goal-id');
+  if (idEl) idEl.value = g.id;
+  document.getElementById('modal-goal-title').value = g.title || '';
+  document.getElementById('modal-goal-target').value = g.target_amount || '';
+  document.getElementById('modal-goal-current').value = g.current_amount || 0;
+  document.getElementById('modal-goal-years').value = g.target_years || 2;
+
+  const heading = document.getElementById('modal-goal-title-text');
+  if (heading) heading.textContent = 'Edit Financial Goal';
+
+  const submitText = document.getElementById('modal-goal-submit-text');
+  if (submitText) submitText.textContent = 'Update Goal';
+
+  document.getElementById('modal-add-goal').classList.remove('hidden');
+}
+
+function closeAddGoalModal() {
+  document.getElementById('modal-add-goal').classList.add('hidden');
+}
+
+function showAddGoalModal() {
+  openAddGoalModal();
+}
+
 function handleAddGoal() {
+  const goalId = document.getElementById('modal-goal-id')?.value;
   const title = document.getElementById('modal-goal-title').value.trim();
   const target = parseFloat(document.getElementById('modal-goal-target').value);
   const current = parseFloat(document.getElementById('modal-goal-current').value) || 0;
-  const years = parseFloat(document.getElementById('modal-goal-years').value) || 3;
-  const roi = parseFloat(document.getElementById('modal-goal-roi').value) || 7.0;
+  const years = parseFloat(document.getElementById('modal-goal-years').value) || 2;
 
-  if (!title || !target) return;
+  if (!title || isNaN(target) || target <= 0) return;
 
-  goals.push({
-    id: Date.now().toString(),
-    title,
-    target_amount: target,
-    current_amount: current,
-    target_years: years,
-    expected_roi_pct: roi,
-    category: 'Custom'
-  });
+  if (goalId) {
+    const idx = goals.findIndex(item => item.id === goalId);
+    if (idx !== -1) {
+      goals[idx] = {
+        ...goals[idx],
+        title,
+        target_amount: target,
+        current_amount: current,
+        target_years: years
+      };
+    }
+  } else {
+    goals.push({
+      id: Date.now().toString(),
+      title,
+      target_amount: target,
+      current_amount: current,
+      target_years: years,
+      category: 'Goal'
+    });
+  }
 
   localStorage.setItem('sarvam_goals', JSON.stringify(goals));
   closeAddGoalModal();
@@ -666,11 +772,18 @@ function deleteGoal(id) {
   recalculateAll();
 }
 
-function showAddGoalModal() {
-  document.getElementById('modal-add-goal').classList.remove('hidden');
-}
-function closeAddGoalModal() {
-  document.getElementById('modal-add-goal').classList.add('hidden');
+function askAiAboutGoal(id) {
+  const g = goals.find(item => item.id === id);
+  if (!g) return;
+
+  switchTab('tab-advisor');
+  const prompt = `How can I achieve my goal "${g.title}" (Target: ₹${formatCurrency(g.target_amount)} in ${g.target_years} years, currently saved: ₹${formatCurrency(g.current_amount)}) faster using passive income and smart investments? What specific low-risk investment vehicles should I use for this timeline?`;
+  
+  const input = document.getElementById('chat-input');
+  if (input) {
+    input.value = prompt;
+    handleSendMessage(false);
+  }
 }
 
 // --- Asset / Liability Management ---

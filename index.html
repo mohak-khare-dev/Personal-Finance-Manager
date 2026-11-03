@@ -347,7 +347,7 @@
               </h3>
               <p class="text-xs text-slate-400">Define whatever targets matter to you: home, education, emergency fund, or retirement</p>
             </div>
-            <button onclick="showAddGoalModal()" class="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition flex items-center space-x-1">
+            <button onclick="openAddGoalModal()" class="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition flex items-center space-x-1">
               <i class="ph ph-plus"></i>
               <span>Add Goal</span>
             </button>
@@ -721,49 +721,46 @@
 
   </main>
 
-  <!-- Add Goal Modal -->
+  <!-- Add / Edit Goal Modal -->
   <div id="modal-add-goal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-slate-700 shadow-2xl space-y-4">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <h3 class="text-sm font-bold text-white flex items-center space-x-2">
           <i class="ph ph-target text-brand-400"></i>
-          <span>Add Custom Financial Goal</span>
+          <span id="modal-goal-title-text">Add Financial Goal</span>
         </h3>
         <button onclick="closeAddGoalModal()" class="text-slate-400 hover:text-white text-lg">
           <i class="ph ph-x"></i>
         </button>
       </div>
 
-      <form onsubmit="event.preventDefault(); handleAddGoal();" class="space-y-3 text-xs">
+      <form onsubmit="event.preventDefault(); handleAddGoal();" class="space-y-3.5 text-xs">
+        <input type="hidden" id="modal-goal-id">
+
         <div>
           <label class="block text-slate-300 mb-1">Goal Name / Title</label>
-          <input type="text" id="modal-goal-title" required placeholder="e.g. Home Down Payment, Child Education, Emergency Fund" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          <input type="text" id="modal-goal-title" required placeholder="e.g. Home Down Payment, Buy a Car, Emergency Reserve" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-slate-300 mb-1">Target Amount (₹)</label>
-            <input type="number" id="modal-goal-target" required placeholder="1000000" step="10000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+            <input type="number" id="modal-goal-target" required placeholder="500000" step="5000" min="1000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
           </div>
           <div>
             <label class="block text-slate-300 mb-1">Currently Saved (₹)</label>
-            <input type="number" id="modal-goal-current" placeholder="0" step="5000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+            <input type="number" id="modal-goal-current" placeholder="0" step="1000" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-slate-300 mb-1">Timeline (Years)</label>
-            <input type="number" id="modal-goal-years" placeholder="3" step="0.5" min="0.5" max="40" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
-          </div>
-          <div>
-            <label class="block text-slate-300 mb-1">Expected Return %</label>
-            <input type="number" id="modal-goal-roi" placeholder="7.0" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
-          </div>
+        <div>
+          <label class="block text-slate-300 mb-1">Target Timeline (Years)</label>
+          <input type="number" id="modal-goal-years" required placeholder="2" step="0.5" min="0.25" max="40" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+          <span class="text-[10px] text-slate-400 mt-1 block">In how many years from now do you need this amount?</span>
         </div>
 
-        <button type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold transition mt-2">
-          Save Goal
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold transition mt-2 shadow-lg shadow-brand-600/30">
+          <span id="modal-goal-submit-text">Save Goal</span>
         </button>
       </form>
     </div>

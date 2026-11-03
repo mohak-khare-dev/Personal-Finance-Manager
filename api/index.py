@@ -46,10 +46,10 @@ class GoalItem(BaseModel):
     id: Optional[str] = None
     title: str = "Emergency Safety Reserve"
     target_amount: float = 200000.0
-    current_amount: float = 80000.0
+    current_amount: float = 0.0
     target_years: float = 2.0
-    expected_roi_pct: float = 6.5
-    category: Optional[str] = "Safety"
+    expected_roi_pct: Optional[float] = None
+    category: Optional[str] = "Goal"
 
 class AssetItem(BaseModel):
     id: Optional[str] = None
